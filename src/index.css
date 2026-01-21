@@ -6,35 +6,55 @@
 
 /* Light Theme */
 :root {
-  --bg: #f6f9fb;           /* Page background */
-  --panel: #ffffff;         /* Panel/Card background */
-  --primary: #ff8a2b;       /* Primary accent (orange) */
-  --muted: #f0f4f8;         /* Muted background */
-  --muted-text: #6b7280;    /* Secondary text */
-  --accent: #2b6ffb;        /* Accent blue */
-  --text-color: #111827;    /* Primary text */
-  
+  --bg: #f6f9fb;
+  /* Page background */
+  --panel: #ffffff;
+  /* Panel/Card background */
+  --primary: #ff8a2b;
+  /* Primary accent (orange) */
+  --muted: #f0f4f8;
+  /* Muted background */
+  --muted-text: #6b7280;
+  /* Secondary text */
+  --accent: #2b6ffb;
+  /* Accent blue */
+  --text-color: #111827;
+  /* Primary text */
+
   /* Status Colors */
-  --status-success: #10B981;   /* Green for approved/success */
-  --status-error: #EF4444;     /* Red for errors/high alerts */
-  --status-warning: #F59E0B;   /* Orange for pending/warnings */
-  --status-info: #3B82F6;      /* Blue for informational */
+  --status-success: #10B981;
+  /* Green for approved/success */
+  --status-error: #EF4444;
+  /* Red for errors/high alerts */
+  --status-warning: #F59E0B;
+  /* Orange for pending/warnings */
+  --status-info: #3B82F6;
+  /* Blue for informational */
 }
 
 /* Dark Theme */
 [data-theme='dark'] {
-  --bg: #003366;            /* Dark blue background */
-  --panel: #002244;         /* Dark panel */
-  --primary: #FF4C39;       /* Red-orange primary */
-  --muted: #001122;         /* Darker muted */
-  --muted-text: #C1C1C1;    /* Light gray text */
-  --accent: #3B82F6;        /* Bright blue */
-  --text-color: #FFFFFF;    /* White text */
+  --bg: #003366;
+  /* Dark blue background */
+  --panel: #002244;
+  /* Dark panel */
+  --primary: #FF4C39;
+  /* Red-orange primary */
+  --muted: #001122;
+  /* Darker muted */
+  --muted-text: #C1C1C1;
+  /* Light gray text */
+  --accent: #3B82F6;
+  /* Bright blue */
+  --text-color: #FFFFFF;
+  /* White text */
 }
 
 /* ==================== Global Styles ==================== */
 
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
 }
 
@@ -76,6 +96,27 @@ body {
   scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
 }
 
+
 .dark .scrollbar-thin::-webkit-scrollbar-thumb {
   background-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Custom Glass Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  /* slate-300 */
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+  /* slate-400 */
 }
