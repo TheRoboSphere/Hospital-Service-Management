@@ -5,9 +5,7 @@ import {
   Settings,
   Ticket,
   LogOut,
-  UserCheck,
 } from "lucide-react";
-import image001 from "../assets/image001.jpg";  
 
 const Sidebar = ({ onLogout }: { onLogout: () => void }) => {
   const location = useLocation();
@@ -20,12 +18,9 @@ const Sidebar = ({ onLogout }: { onLogout: () => void }) => {
   const safeUnitId = unitId ?? "0";
 
   const menuItems = [
-    // { key: "dashboard", label: "Dashboard", icon: Home },
-   
     { key: "tickets", label: "Dashboard", icon: Home },
-    // { key: "my-tickets", label: "My Tickets", icon: UserCheck },
     { key: "review", label: "Review Ticket", icon: Ticket },
-     { key: "equipments", label: "Equipment", icon: Package },
+    { key: "equipments", label: "Equipment", icon: Package },
     { key: "settings", label: "Settings", icon: Settings },
   ];
 
@@ -34,46 +29,59 @@ const Sidebar = ({ onLogout }: { onLogout: () => void }) => {
   };
 
   return (
-    <div className="bg-slate-900 fixed left-0 top-0 text-white w-[300px] h-screen p-6 flex flex-col">
-      <div className="flex items-center gap-3 mb-10">
-        <div className="bg-white p-2 rounded-lg">
-          <img src={image001} className="size-full" />
-        </div>
-        {/* <div>
-          <h1 className="text-lg font-bold">Neotia Hospital</h1>
-          <p className="text-sm text-slate-400">Inventory System</p>
-        </div> */}
+    <div className="bg-slate-900/95 backdrop-blur-xl fixed left-0 top-0 text-white w-[280px] h-screen p-6 flex flex-col border-r border-slate-700/50 shadow-2xl z-50 transition-all duration-300">
+
+      {/* Decorative Gradient Blob */}
+      <div className="absolute -top-20 -left-20 w-60 h-60 bg-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+      {/* Header / Logo */}
+      <div className="relative z-10 flex items-center justify-center mb-10 mt-4">
+        <img
+          src="https://i.postimg.cc/SQ3Nj54Y/logo-1.png"
+          className="h-24 w-auto object-contain brightness-0 invert"
+          alt="Logo"
+        />
       </div>
 
-      <nav className="space-y-2 flex-1">
+      <nav className="space-y-2 flex-1 relative z-10">
+        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4 px-4 font-mono">Menu</p>
+
         {menuItems.map((item) => {
           const Icon = item.icon;
-
           const isActive = location.pathname.includes(item.key);
 
           return (
             <button
               key={item.key}
               onClick={() => handleNavClick(item.key)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg ${
-                isActive
-                  ? "bg-blue-600 text-white"
-                  : "text-slate-300 hover:bg-slate-800"
-              }`}
+              className={`group w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 border ${isActive
+                ? "bg-blue-600 shadow-[0_4px_20px_rgba(37,99,235,0.3)] border-blue-500 text-white translate-x-1"
+                : "bg-transparent border-transparent text-slate-400 hover:bg-slate-800/50 hover:text-white"
+                }`}
             >
-              <Icon className="w-5 h-5" />
-              {item.label}
+              <Icon
+                className={`w-5 h-5 transition-transform duration-300 ${isActive ? "scale-110" : "group-hover:scale-110"
+                  }`}
+              />
+              <span className="font-medium tracking-wide">{item.label}</span>
+
+
             </button>
           );
         })}
       </nav>
 
-      <button
-        onClick={onLogout}
-        className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-red-600"
-      >
-        <LogOut className="w-5 h-5" /> Logout
-      </button>
+      <div className="relative z-10 pt-6 mt-auto border-t border-slate-800">
+        <button
+          onClick={onLogout}
+          className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-slate-400 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20 border border-transparent transition-all duration-200 group"
+        >
+          <div className="p-2 rounded-lg bg-slate-800 group-hover:bg-red-500/20 transition-colors">
+            <LogOut className="w-4 h-4 text-red-500" />
+          </div>
+          <span className="font-medium text-red-500">Logout</span>
+        </button>
+      </div>
     </div>
   );
 };
