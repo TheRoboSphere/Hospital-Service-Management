@@ -29,22 +29,19 @@ const Sidebar = ({ onLogout }: { onLogout: () => void }) => {
   };
 
   return (
-    <div className="bg-slate-900/95 backdrop-blur-xl fixed left-0 top-0 text-white w-[280px] h-screen p-6 flex flex-col border-r border-slate-700/50 shadow-2xl z-50 transition-all duration-300">
-
-      {/* Decorative Gradient Blob */}
-      <div className="absolute -top-20 -left-20 w-60 h-60 bg-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
+    <div className="bg-[#F6F8FA] fixed left-0 top-0 w-[280px] h-screen p-6 flex flex-col z-50 transition-all duration-300 shadow-xl">
 
       {/* Header / Logo */}
       <div className="relative z-10 flex items-center justify-center mb-10 mt-4">
         <img
           src="https://i.postimg.cc/SQ3Nj54Y/logo-1.png"
-          className="h-24 w-auto object-contain brightness-0 invert"
-          alt="Logo"
+          className="h-20 w-auto object-contain"
+          alt="Ambuja Neotia"
         />
       </div>
 
       <nav className="space-y-2 flex-1 relative z-10">
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4 px-4 font-mono">Menu</p>
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 px-4 font-sans">Menu</p>
 
         {menuItems.map((item) => {
           const Icon = item.icon;
@@ -54,32 +51,30 @@ const Sidebar = ({ onLogout }: { onLogout: () => void }) => {
             <button
               key={item.key}
               onClick={() => handleNavClick(item.key)}
-              className={`group w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200 border ${isActive
-                ? "bg-blue-600 shadow-[0_4px_20px_rgba(37,99,235,0.3)] border-blue-500 text-white translate-x-1"
-                : "bg-transparent border-transparent text-slate-400 hover:bg-slate-800/50 hover:text-white"
+              className={`group w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${isActive
+                ? "bg-blue-600 text-white shadow-md shadow-blue-200"
+                : "bg-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-100"
                 }`}
             >
               <Icon
-                className={`w-5 h-5 transition-transform duration-300 ${isActive ? "scale-110" : "group-hover:scale-110"
-                  }`}
+                className={`w-5 h-5 ${isActive ? "" : "group-hover:text-slate-600"}`}
               />
-              <span className="font-medium tracking-wide">{item.label}</span>
-
-
+              <span className="font-semibold tracking-wide text-sm">{item.label}</span>
             </button>
           );
         })}
       </nav>
 
-      <div className="relative z-10 pt-6 mt-auto border-t border-slate-800">
+      {/* Divider */}
+      <div className="h-px bg-slate-200 my-4"></div>
+
+      <div className="relative z-10 mt-auto">
         <button
           onClick={onLogout}
-          className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-slate-400 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20 border border-transparent transition-all duration-200 group"
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-500 hover:bg-red-50 transition-all duration-200 group"
         >
-          <div className="p-2 rounded-lg bg-slate-800 group-hover:bg-red-500/20 transition-colors">
-            <LogOut className="w-4 h-4 text-red-500" />
-          </div>
-          <span className="font-medium text-red-500">Logout</span>
+          <LogOut className="w-5 h-5" />
+          <span className="font-semibold text-sm">Logout</span>
         </button>
       </div>
     </div>
