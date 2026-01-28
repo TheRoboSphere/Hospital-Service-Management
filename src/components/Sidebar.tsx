@@ -6,8 +6,9 @@ import {
   Ticket,
   LogOut,
 } from "lucide-react";
+import UserProfileCard from "./UserProfileCard";
 
-const Sidebar = ({ onLogout }: { onLogout: () => void }) => {
+const Sidebar = ({ onLogout, user }: { onLogout: () => void; user: any }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -65,10 +66,13 @@ const Sidebar = ({ onLogout }: { onLogout: () => void }) => {
         })}
       </nav>
 
-      {/* Divider */}
-      <div className="h-px bg-slate-200 my-4"></div>
+      {/* User Profile Card */}
+      <div className="relative z-10 mt-auto mb-3">
+        <UserProfileCard user={user} />
+      </div>
 
-      <div className="relative z-10 mt-auto">
+      {/* Logout Button */}
+      <div className="relative z-10">
         <button
           onClick={onLogout}
           className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-500 hover:bg-red-50 transition-all duration-200 group"

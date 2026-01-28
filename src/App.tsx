@@ -22,8 +22,7 @@ import SelectUnitPage from "./components/SelectUnitPage";
 
 import Register from "./components/Register";
 import EquipmentPage from "./components/EquipmentPage";
-import Reviewticket from "./components/Reviewticket";
-import ReviewList from "./components/Reviewlist";
+
 import MyTickets from "./components/MyTickets";
 
 
@@ -40,12 +39,12 @@ function ProtectedRoute({
 }
 
 /* -------------------------------- UNIT LAYOUT --------------------------- */
-function UnitLayout({ onLogout }: { onLogout: () => void }) {
+function UnitLayout({ onLogout, user }: { onLogout: () => void; user: any }) {
 
 
   return (
     <>
-      <Sidebar onLogout={onLogout} />
+      <Sidebar onLogout={onLogout} user={user} />
       <div className="ml-[280px] w-[calc(100%-280px)]">
         <Outlet />
       </div>
@@ -111,7 +110,7 @@ function App() {
           path="/unit/:unitId"
           element={
             <ProtectedRoute isAuthed={isAuthenticated}>
-              <UnitLayout onLogout={handleLogout} />
+              <UnitLayout onLogout={handleLogout} user={loggedUser} />
             </ProtectedRoute>
           }
         >

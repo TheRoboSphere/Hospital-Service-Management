@@ -110,12 +110,13 @@ body {
 
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
+  margin: 8px 0;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   /* slate-300 */
-  border-radius: 10px;
+  border-radius: 6px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
