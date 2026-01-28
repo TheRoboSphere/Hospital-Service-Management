@@ -129,7 +129,7 @@ const Reviewticket: React.FC<ReviewticketProps> = ({ ticket, onUpdate, onApprove
                 className="w-full border p-2 rounded"
                 value={editData.priority}
                 onChange={(e) =>
-                  setEditData({ ...editData, priority: e.target.value })
+                  setEditData({ ...editData, priority: e.target.value as Ticket['priority'] })
                 }
               >
                 {priorities.map((p) => (

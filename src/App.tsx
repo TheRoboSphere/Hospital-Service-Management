@@ -44,12 +44,12 @@ function UnitLayout({ onLogout }: { onLogout: () => void }) {
 
 
   return (
-    <div className="flex">
-      <Sidebar  onLogout={onLogout} />
-      <div className="flex-1 ml-[300px]">
+    <>
+      <Sidebar onLogout={onLogout} />
+      <div className="ml-[280px] w-[calc(100%-280px)]">
         <Outlet />
       </div>
-    </div>
+    </>
   );
 }
 
@@ -92,30 +92,30 @@ function App() {
   return (
     <div className="flex">
       <Routes>
-  {/* LOGIN */}
-  <Route path="/" element={<LoginPage onLogin={handleLogin} />} />
-  <Route path="/register" element={<Register />} />
+        {/* LOGIN */}
+        <Route path="/" element={<LoginPage onLogin={handleLogin} />} />
+        <Route path="/register" element={<Register />} />
 
-  {/* SELECT UNIT */}
-  <Route
-    path="/select-unit"
-    element={
-      <ProtectedRoute isAuthed={isAuthenticated}>
-        <SelectUnitPage />
-      </ProtectedRoute>
-    }
-  />
+        {/* SELECT UNIT */}
+        <Route
+          path="/select-unit"
+          element={
+            <ProtectedRoute isAuthed={isAuthenticated}>
+              <SelectUnitPage />
+            </ProtectedRoute>
+          }
+        />
 
-  {/* UNIT ROUTES */}
-  <Route
-    path="/unit/:unitId"
-    element={
-      <ProtectedRoute isAuthed={isAuthenticated}>
-        <UnitLayout onLogout={handleLogout} />
-      </ProtectedRoute>
-    }
-  >
-    {/* <Route
+        {/* UNIT ROUTES */}
+        <Route
+          path="/unit/:unitId"
+          element={
+            <ProtectedRoute isAuthed={isAuthenticated}>
+              <UnitLayout onLogout={handleLogout} />
+            </ProtectedRoute>
+          }
+        >
+          {/* <Route
       path="dashboard"
       element={
         <Dashboard
@@ -125,38 +125,38 @@ function App() {
       }
     /> */}
 
-    {/* ✅ ADMIN ONLY */}
-    <Route
-      path="equipments"
-      element={
-       <EquipmentPage />
-      }
-    />
+          {/* ✅ ADMIN ONLY */}
+          <Route
+            path="equipments"
+            element={
+              <EquipmentPage />
+            }
+          />
 
-    <Route
-      path="tickets"
-      element={<TicketManagement />}
-    />
-    
-    <Route
-      path="review"
-      element={<MyTickets />}
-    />
-{/* 
+          <Route
+            path="tickets"
+            element={<TicketManagement />}
+          />
+
+          <Route
+            path="review"
+            element={<MyTickets />}
+          />
+          {/* 
     <Route
       path="my-tickets"
       element={<MyTickets />}
     /> */}
 
-    <Route path="settings" element={<Settings />} />
-    
-  </Route>
+          <Route path="settings" element={<Settings />} />
 
-  {/* FALLBACK */}
-  <Route path="*" element={<Navigate to="/" replace />} />
-</Routes>
+        </Route>
 
-      
+        {/* FALLBACK */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+
+
     </div>
   );
 }
