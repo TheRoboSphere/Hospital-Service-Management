@@ -65,6 +65,8 @@ export interface Ticket {
   Bed?: string;
   assignedTo?: string;
   assignedToName?: string;
+  assignedToId?: number;
+  assignedToDepartment?: string;
   comment?: string;
   createdAt: string;
   updatedAt: string;

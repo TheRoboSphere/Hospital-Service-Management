@@ -1,13 +1,12 @@
 
-import { useState } from "react";
 import {
   Routes,
   Route,
   Navigate,
-  useNavigate,
-
   Outlet,
 } from "react-router-dom";
+import { useAuth } from "./hooks/useAuth";
+import { axiosClient } from "./api/axiosClient";
 
 import LoginPage from "./components/LoginPage";
 import Sidebar from "./components/Sidebar";
@@ -54,20 +53,14 @@ function UnitLayout({ onLogout, user }: { onLogout: () => void; user: any }) {
 
 /* -------------------------------- MAIN APP --------------------------- */
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loggedUser, setLoggedUser] = useState<any>(null);
-
-
-
-  const navigate = useNavigate();
+  const { user: loggedUser, loading } = useAuth();
+  const isAuthenticated = !!loggedUser;
 
   /* ------------------------------ LOGIN ------------------------------ */
   const handleLogin = (user: any) => {
-    setIsAuthenticated(true);
-    setLoggedUser(user);
-
+    // Cookie is already set by backend, just navigate and reload
     if (user.role === "admin") {
-      navigate("/select-unit");
+      window.location.href = "/select-unit";
       return;
     }
 
@@ -76,17 +69,32 @@ function App() {
       return;
     }
 
-    navigate(`/unit/${user.unitId}/tickets`);
+    window.location.href = `/unit/${user.unitId}/tickets`;
   };
 
   /* ------------------------------ LOGOUT ------------------------------ */
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    setLoggedUser(null);
-    navigate("/");
+  const handleLogout = async () => {
+    try {
+      await axiosClient.post("/auth/logout");
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+    window.location.href = "/";
   };
 
 
+
+  // Show loading state while checking authentication
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+          <p className="text-lg text-slate-700 font-medium">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex">

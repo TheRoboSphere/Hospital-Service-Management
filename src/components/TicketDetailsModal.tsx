@@ -1,14 +1,8 @@
-import React, { useEffect,useState } from 'react';
-import { Ticket, Equipment, TicketComment } from '../types';
-import { TICKET_CATEGORIES } from '../constants/category';
-import { axiosClient } from '../api/axiosClient';
+import React, { useState } from 'react';
+import { Ticket, TicketComment } from '../types';
 
-import { 
-  X, 
-  User, 
-  MessageSquare, 
-
-  Edit
+import {
+  MessageSquare,
 } from 'lucide-react';
 
 interface TicketDetailsModalProps {
@@ -16,36 +10,16 @@ interface TicketDetailsModalProps {
   onClose: () => void;
   ticket: Ticket;
   onUpdate: (ticket: Ticket) => void;
-  equipments: Equipment[];
 }
 
 const TicketDetailsModal: React.FC<TicketDetailsModalProps> = ({
   isOpen,
   onClose,
   ticket,
-  onUpdate,
-  equipments
+  onUpdate
 }) => {
 
   const [newComment, setNewComment] = useState('');
-  const [isEditing, setIsEditing] = useState(false);
-  type TicketStatus = "Open" | "In Progress" | "Pending" | "Resolved" | "Closed";
-type TicketPriority = "Low" | "Medium" | "High" | "Critical";
-
- 
-const [editData, setEditData] = useState<{
-  status: TicketStatus;
-  priority: TicketPriority;
-  category: string;
-  assignedTo: string | null;
-  comments: TicketComment[];
-}>({
-  status: ticket.status,
-  priority: ticket.priority,
-  category: ticket.category,
-  assignedTo: ticket.assignedTo ?? null,
-  comments: ticket.comments ?? []
-});
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-IN', {
@@ -61,19 +35,20 @@ const [editData, setEditData] = useState<{
     const now = new Date();
     const date = new Date(dateString);
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
+
     if (diffInHours < 1) return 'Just now';
     if (diffInHours < 24) return `${diffInHours}h ago`;
     return `${Math.floor(diffInHours / 24)}d ago`;
   };
 
   const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'Critical': return 'bg-red-100 text-red-700 border-red-200';
-      case 'High': return 'bg-orange-100 text-orange-700 border-orange-200';
-      case 'Medium': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-      case 'Low': return 'bg-green-100 text-green-700 border-green-200';
-      default: return 'bg-gray-100 text-gray-700 border-gray-200';
+    const priorityLower = priority.toLowerCase();
+    switch (priorityLower) {
+      case 'critical': return 'bg-red-50 text-red-700 border border-red-200';
+      case 'high': return 'bg-red-50 text-red-700 border border-red-200';
+      case 'medium': return 'bg-yellow-50 text-yellow-700 border border-yellow-200';
+      case 'low': return 'bg-green-50 text-green-700 border border-green-200';
+      default: return 'bg-gray-50 text-gray-700 border border-gray-200';
     }
   };
 
@@ -88,291 +63,174 @@ const [editData, setEditData] = useState<{
     }
   };
 
-  const relatedEquipment = equipments.find(eq => eq.id === ticket.id);
-
- 
   const comments = ticket.comments ?? [];
 
   const handleAddComment = () => {
-  if (!newComment.trim()) return;
+    if (!newComment.trim()) return;
 
-  const comment: TicketComment = {
-    id: Date.now().toString(),
-    ticketId: ticket.id,
-    author: ticket.createdBy || 'Unknown',
-    content: newComment,
-    createdAt: new Date().toISOString(),
-    isInternal: false,
-  };
+    const comment: TicketComment = {
+      id: Date.now().toString(),
+      ticketId: ticket.id,
+      author: ticket.createdBy || 'Unknown',
+      content: newComment,
+      createdAt: new Date().toISOString(),
+      isInternal: false,
+    };
 
-  onUpdate({
-    ...ticket,
-    comments: [...comments, comment], // ✅ SAFE
-    updatedAt: new Date().toISOString(),
-  });
-
-  setNewComment('');
-};
-
- 
-  const handleSaveChanges = async () => {
-  try {
-    const res = await axiosClient.patch(`/tickets/${ticket.id}`, {
-      status: editData.status,
-      priority: editData.priority,
-      category: editData.category,
-      assignedTo: editData.assignedTo,
+    onUpdate({
+      ...ticket,
+      comments: [...comments, comment], // ✅ SAFE
+      updatedAt: new Date().toISOString(),
     });
 
-    // 🔥 Update parent with DB response
-    onUpdate(res.data.ticket);
-
-    setIsEditing(false);
-  } catch (error) {
-    console.error("Failed to update ticket", error);
-    alert("Failed to save changes");
-  }
-};
-
-useEffect(() => {
-  setEditData({
-    status: ticket.status,
-    priority: ticket.priority,
-    category: ticket.category,
-    assignedTo: ticket.assignedTo ?? null,
-    comments: ticket.comments ?? []
-  });
-}, [ticket]);
+    setNewComment('');
+  };
 
 
-  const statuses: Ticket['status'][] = ['Open', 'In Progress', 'Pending', 'Resolved', 'Closed'];
-  const priorities: Ticket['priority'][] = ['Low', 'Medium', 'High', 'Critical'];
-  const assignees = [
-    'Dr. Priya Sharma',
-    'IT Team Lead',
-    'Biomedical Engineer',
-    'Maintenance Supervisor',
-    'Security Manager',
-    'HR Manager',
-    'Admin Manager'
-  ];
+
+
+
+
+
+  /* ---------------- BODY SCROLL LOCK ---------------- */
+  React.useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl max-w-5xl w-full max-height-[90vh] overflow-y-auto">
-        
+    <div
+      className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white/90 backdrop-blur-xl rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-white/50"
+        onClick={(e) => e.stopPropagation()}
+      >
+
         {/* HEADER */}
-        <div className="flex items-center justify-between p-6 border-b">
-          <div className="flex items-center gap-4">
-            <h2 className="text-2xl font-bold text-gray-900">Ticket Details</h2>
-            <span className="text-sm text-gray-500">#{ticket.id}</span>
+        <div className="flex items-center justify-between px-8 py-5 border-b border-slate-200/60">
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-bold text-slate-900">Ticket Details</h2>
+            <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs font-medium">#{ticket.id}</span>
           </div>
-
-         
-
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <X className="w-6 h-6" />
-          </button>
         </div>
 
-        <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="p-8 space-y-8">
 
-          {/* MAIN CONTENT */}
-          <div className="lg:col-span-2 space-y-6">
-            
-            {/* HEADER DETAILS */}
-            <div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">{ticket.title}</h3>
+          {/* TITLE & META */}
+          <div className="space-y-4">
+            {/* Row 1: Title + Created */}
+            <div className="flex items-center gap-3">
+              <h3 className="text-3xl font-bold text-slate-900">{ticket.title}</h3>
+              <span className="text-slate-500 text-sm mt-1">
+                {formatDate(ticket.createdAt)}
+              </span>
+            </div>
 
-              <div className="flex flex-wrap items-center gap-4 mb-4">
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(ticket.status)}`}>
-                  {ticket.status}
-                </span>
+            {/* Row 2: Priority + Category + Status */}
+            <div className="flex items-center gap-3 text-sm">
+              <span className={`px-3 py-1 rounded-full font-semibold ${getPriorityColor(ticket.priority)}`}>
+                {ticket.priority.toLowerCase()} Priority
+              </span>
 
-                <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getPriorityColor(ticket.priority)}`}>
-                  {ticket.priority} Priority
-                </span>
+              <span className="px-3 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-full font-semibold">
+                {ticket.category}
+              </span>
 
-                {/* CATEGORY DISPLAY */}
-                <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
-                  {ticket.category}
-                </span>
+              <span className={`px-3 py-1 rounded-full font-semibold ${getStatusColor(ticket.status)}`}>
+                {ticket.status}
+              </span>
+            </div>
+          </div>
+
+          {/* ASSIGNED TO & DESCRIPTION (Swapped) */}
+          <div className="flex items-start gap-6">
+            <div className="space-y-2 shrink-0 w-1/3">
+              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wide">Assigned To</h4>
+              <div className="flex items-center justify-start gap-2">
+                {ticket.assignedToDepartment ? (
+                  <div>
+                    <span className="block font-medium text-slate-900">{ticket.assignedToDepartment}</span>
+                    <span className="block text-xs text-slate-500">{ticket.assignedTo || 'Unassigned'}</span>
+                  </div>
+                ) : (
+                  <span className="font-medium text-slate-900">{ticket.assignedTo || 'Unassigned'}</span>
+                )}
               </div>
             </div>
 
-            {/* DESCRIPTION */}
-            <div className="bg-gray-50 p-6 rounded-lg">
-              <h4 className="font-semibold mb-3">Description</h4>
-              <p className="text-gray-700">{ticket.description}</p>
+            <div className="space-y-2 flex-1 border-l border-slate-100 pl-6">
+              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wide">Description</h4>
+              <p className="text-slate-700 leading-relaxed text-sm">{ticket.description}</p>
             </div>
+          </div>
 
-            {/* COMMENTS */}
-            <div>
-              <h4 className="font-semibold mb-4 flex items-center gap-2">
-                <MessageSquare className="w-5 h-5" />
+          {/* SEPARATOR */}
+          <div className="h-px bg-slate-200/60" />
+
+          {/* COMMENTS */}
+          <div>
+            {/* COMMENTS HEADER ROW */}
+            <div className="flex items-center justify-between mb-6">
+              <h4 className="font-bold text-slate-900 flex items-center gap-2 text-sm uppercase tracking-wide">
+                <MessageSquare className="w-4 h-4" />
                 Comments ({comments.length})
               </h4>
 
+              <button
+                onClick={handleAddComment}
+                disabled={!newComment.trim()}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-semibold disabled:bg-slate-300 disabled:cursor-not-allowed transition shadow-sm"
+              >
+                Add Comment
+              </button>
+            </div>
+
+            <div className="space-y-4 mb-6">
               {comments.map(comment => (
                 <div
                   key={comment.id}
-                  className={`p-4 rounded-lg mb-4 ${
-                    comment.isInternal
-                      ? 'bg-yellow-50 border-l-4 border-yellow-400'
-                      : 'bg-white border border-gray-200'
-                  }`}
+                  className={`p-4 rounded-xl ${comment.isInternal
+                    ? 'bg-yellow-50/80 border-l-4 border-yellow-400'
+                    : 'bg-white border border-slate-200 shadow-sm'
+                    }`}
                 >
                   <div className="flex justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <User className="w-4 h-4 text-blue-600" />
-                      <span className="font-medium">{comment.author}</span>
-
+                      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-[10px] font-bold">
+                        {comment.author.split(' ').map(n => n[0]).join('')}
+                      </div>
+                      <span className="font-semibold text-sm text-slate-900">{comment.author}</span>
                       {comment.isInternal && (
-                        <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs font-medium">
+                        <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full text-[10px] font-semibold">
                           Internal
                         </span>
                       )}
                     </div>
-
-                    <span className="text-sm text-gray-500">{getTimeAgo(comment.createdAt)}</span>
+                    <span className="text-xs text-slate-500 font-medium">{getTimeAgo(comment.createdAt)}</span>
                   </div>
-
-                  <p className="text-gray-700">{comment.content}</p>
+                  <p className="text-slate-700 text-sm leading-relaxed ml-8">{comment.content}</p>
                 </div>
               ))}
-
-              {/* ADD COMMENT */}
-              <div className="border-t pt-4">
-                <textarea
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="Add a comment..."
-                  className="w-full p-3 border rounded-lg"
-                />
-                <div className="flex justify-end mt-2">
-                  <button
-                    onClick={handleAddComment}
-                    disabled={!newComment.trim()}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg disabled:bg-gray-300"
-                  >
-                    Add Comment
-                  </button>
-                </div>
-              </div>
-
             </div>
 
-          </div>
-
-          {/* SIDEBAR */}
-          <div className="space-y-6">
-
-            {/* EDIT MODE */}
-            {isEditing ? (
-              <div className="p-6 border rounded-lg space-y-4">
-
-                {/* STATUS */}
-                <div>
-                  <label>Status</label>
-                  <select
-                    value={editData.status}
-                    onChange={(e) => setEditData(prev => ({ ...prev, status: e.target.value as TicketStatus }))}
-                    className="w-full p-2 border rounded-lg"
-                  >
-                    {statuses.map(s => <option key={s}>{s}</option>)}
-                  </select>
-                </div>
-
-                {/* PRIORITY */}
-                <div>
-                  <label>Priority</label>
-                  <select
-                    value={editData.priority}
-                    onChange={(e) => setEditData(prev => ({ ...prev, priority: e.target.value as TicketPriority }))}
-                    className="w-full p-2 border rounded-lg"
-                  >
-                    {priorities.map(p => <option key={p}>{p}</option>)}
-                  </select>
-                </div>
-
-                {/* CATEGORY — NEW */}
-                <div>
-                  <label>Category</label>
-                  <select
-                    value={editData.category}
-                    onChange={(e) => setEditData(prev => ({ ...prev, category: e.target.value }))}
-                    className="w-full p-2 border rounded-lg"
-                  >
-                    {TICKET_CATEGORIES.map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* ASSIGN TO */}
-                <div>
-                  <label>Assign To</label> 
-                  <select
-                    value={editData.assignedTo ?? ""}
-                    onChange={(e) => setEditData(prev => ({ ...prev, assignedTo: e.target.value }))}
-                    className="w-full p-2 border rounded-lg"
-                  >
-                    <option value="">Unassigned</option>
-                    {assignees.map(a => (
-                      <option key={a} value={a}>{a}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <button
-                  onClick={handleSaveChanges}
-                  className="w-full bg-blue-600 text-white p-2 rounded-lg"
-                >
-                  Save Changes
-                </button>
-
-              </div>
-            ) : (
-
-              /* VIEW MODE */
-              <div className="p-6 border rounded-lg space-y-4">
-                <div>
-                  <p>Status:</p>
-                  <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(ticket.status)}`}>
-                    {ticket.status}
-                  </span>
-                </div>
-
-                <div>
-                  <p>Priority:</p>
-                  <span className={`px-2 py-1 text-xs rounded-full border ${getPriorityColor(ticket.priority)}`}>
-                    {ticket.priority}
-                  </span>
-                </div>
-
-                <div>
-                  <p>Category:</p>
-                  <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700">
-                    {ticket.category}
-                  </span>
-                </div>
-
-                <div>
-                  <p>Assigned To:</p>
-                  <span>{ticket.assignedTo || 'Unassigned'}</span>
-                </div>
-
-                <div>
-                  <p>Created:</p>
-                  <span>{formatDate(ticket.createdAt)}</span>
-                </div>
-              </div>
-            )}
+            {/* ADD COMMENT INPUT */}
+            <div>
+              <textarea
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Add a comment..."
+                className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm shadow-sm"
+                rows={4}
+              />
+            </div>
 
           </div>
 

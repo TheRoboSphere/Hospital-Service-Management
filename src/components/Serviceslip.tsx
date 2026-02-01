@@ -1,8 +1,10 @@
 
 import React, { useEffect, useMemo, useState } from "react";
-import { Equipment, Ticket, User } from "../types";
-import { X, CalendarClock, Building2, User2, FileText } from "lucide-react";
+import { Ticket, User } from "../types";
+import { Building2, User2, FileText } from "lucide-react";
 import { axiosClient } from "../api/axiosClient";
+import CustomDatePicker from "./CustomDatePicker";
+import CustomSelect from "./CustomSelect";
 
 interface ServiceSlipProps {
   ticket: Ticket | null;
@@ -42,7 +44,7 @@ const ServiceSlip: React.FC<ServiceSlipProps> = ({
 
   // Assignment state
   const [users, setUsers] = useState<User[]>([]);
-  const [equipments, setEquipments] = useState<Equipment[]>([]);
+  /* const [equipments, setEquipments] = useState<Equipment[]>([]); */
   const [assignedToId, setAssignedToId] = useState<number | null>(null);
   const [requiredEquipmentIds] = useState<number[]>([]);
   const [equipmentNote, setEquipmentNote] = useState("");
@@ -101,10 +103,10 @@ const ServiceSlip: React.FC<ServiceSlipProps> = ({
     axiosClient
       .get("/users/assignable", { params: { unitId: ticket.unitId } })
       .then((res) => setUsers(res.data.users));
-	 
-    axiosClient
+
+    /* axiosClient
       .get("/equipments", { params: { unitId: ticket.unitId } })
-      .then((res) => setEquipments(res.data.equipments));
+      .then((res) => setEquipments(res.data.equipments)); */
   }, [isAccepted, ticket.unitId]);
 
   /* ---------------- ASSIGN ---------------- */
@@ -134,270 +136,220 @@ const ServiceSlip: React.FC<ServiceSlipProps> = ({
     }
   };
 
+  /* ---------------- BODY SCROLL LOCK ---------------- */
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, []);
+
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 flex items-center justify-center overflow-auto">
-      <div className="w-full h-screen max-w-5xl bg-white rounded-none md:rounded-3xl shadow-xl">
+    <div
+      className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh] border border-white/50 relative animate-in fade-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
 
-       
-
-        {/* CONTENT */}
-        <div className="px-8 py-6 bg-white overflow-scroll space-y-6">
-
-          {/* BASIC INFO */}
-          
-		  
-							<div className="grid gap-4 rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-700 md:grid-cols-2">
-								<div className="flex items-center gap-3">
-                  <div className=" flex items-center justify-between">
-                              <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Service Call Slip</p>
-                              <h2 className="text-2xl font-semibold text-slate-900 mt-1">Ticket #{ticket.id}</h2>
-                            </div>
-                            <button
-                              onClick={onClose}
-                              className="rounded-full border border-slate-200 p-2 text-slate-500 hover:bg-slate-50"
-                              aria-label="Close"
-                            >
-                              <X className="h-5 w-5" />
-                            </button>
-									{/* <FileText className="h-4 w-4 text-slate-400" />
-									<span>
-										<strong className="text-slate-900">Ticket Number :</strong> #{ticket.id}
-									</span> */}
-								</div>
-								<div className="flex items-center gap-3">
-									<Building2 className="h-4 w-4 text-slate-400" />
-									<span>
-										<strong className="text-slate-900">Unit Name :</strong> {ticket.unitId || FALLBACK_UNIT}
-									</span>
-								</div>
-							</div>
-		  
-							<div className="grid gap-6 text-sm text-slate-700 md:grid-cols-2">
-								<div className="space-y-3">
-									<p>
-										<strong className="text-slate-900">Posted Date:</strong> {postedDate}
-									</p>
-									<p>
-										<strong className="text-slate-900">Description:</strong> {ticket.description || 'No description provided.'}
-									</p>
-									<p>
-										<strong className="text-slate-900">Room No:</strong> {ticket.Room || 'N/A'}
-									</p>
-									<p>
-										<strong className="text-slate-900">Assigned:</strong> {ticket.assignedTo || 'Unassigned'}
-									</p>
-								</div>
-		  
-								<div className="space-y-3">
-									<p className="text-rose-600 font-semibold">
-										<strong className="text-slate-900">Service Request For:</strong> {ticket.title}
-									</p>
-									<p>
-										<strong className="text-slate-900">Department:</strong> {ticket.department}
-									</p>
-									<p>
-										<strong className="text-slate-900">Bed No:</strong> {ticket.Bed || 'N/A'}
-									</p>
-									<p>
-										<strong className="text-slate-900">Remarks:</strong> {remarks || 'N/A'}
-									</p>
-								</div>
-							</div>
-		  
-							<div className="grid gap-4 rounded-2xl border border-slate-100 p-4 text-sm text-slate-700 md:grid-cols-3">
-								<p>
-									<strong className="text-slate-900">Requested by:</strong> {ticket.createdBy}
-								</p>
-								<p>
-									<strong className="text-slate-900">Floor No:</strong> {ticket.Floor || 'N/A'}
-								</p>
-								<div className="flex items-center gap-2">
-									<strong className="text-slate-900">Call Status:</strong>
-									<span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusPill(ticket.status)}`}>
-										{ticket.status}
-									</span>
-								</div>
-							</div>
-		  
-							<div className="grid gap-4 md:grid-cols-[1fr,1fr]">
-								<label className="flex flex-col gap-2 text-sm text-slate-700">
-									<span className="font-semibold text-slate-900">Date & Time of Accept/Decline</span>
-									<div className="flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-2">
-										<CalendarClock className="h-5 w-5 text-slate-400" />
-										<input
-											type="datetime-local"
-											value={actionDate}
-											onChange={(e) => setActionDate(e.target.value)}
-											className="flex-1 bg-transparent text-slate-900 focus:outline-none"
-										/>
-									</div>
-								</label>
-		  
-								<label className="flex flex-col gap-2 text-sm text-slate-700">
-									<span className="font-semibold text-slate-900">Remarks</span>
-									<textarea
-										value={remarks}
-										onChange={(e) => setRemarks(e.target.value)}
-										rows={3}
-										className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-slate-900 focus:border-blue-400 focus:outline-none"
-										placeholder="Add any notes for the engineer"
-									/>
-								</label>
-							</div>
-						
-		  
-						<div className="flex flex-col gap-3 border-t border-slate-100 px-8 py-6 md:flex-row md:items-center md:justify-end">
-							<div className="flex flex-1 flex-wrap items-center gap-3 text-sm text-slate-500 md:justify-start">
-								<div className="inline-flex items-center gap-2">
-									<User2 className="h-4 w-4 text-slate-400" />
-									<span>Logged by {ticket.createdBy}</span>
-								</div>
-								<div className="inline-flex items-center gap-2">
-									<FileText className="h-4 w-4 text-slate-400" />
-									<span>Category: {ticket.category}</span>
-								</div>
-							</div>
-		  
-						
-						{/* </div> */}
-
-          {/* ACTIONS */}
-          <div className="flex gap-3 justify-end">
-            <button
-              disabled={isAccepted}
-              onClick={handleAccept}
-              className={`px-6 py-2 rounded-full text-white ${
-                isAccepted ? "bg-gray-400 cursor-not-allowed" : "bg-emerald-600"
-              }`}
-            >
-              Accept
-            </button>
-
-            <button
-              disabled={isAccepted}
-              onClick={handleDecline}
-              className={`px-6 py-2 rounded-full ${
-                isAccepted ? "bg-gray-200 cursor-not-allowed" : "border border-rose-300 text-rose-600"
-              }`}
-            >
-              Decline
-            </button>
-          </div>
-              </div>
-          {/* ASSIGN SECTION */}
-          {/* {isAccepted && (
-            <div className="border-t pt-6 space-y-4 bg-slate-50 p-6 rounded-xl">
-              <h3 className="font-semibold text-lg">Assign Work</h3>
-
-              <select
-                className="w-full border p-2 rounded"
-                onChange={(e) => setAssignedToId(Number(e.target.value))}
-              >
-                <option value="">Select employee / admin</option>
-                {users.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name} ({u.role})
-                  </option>
-                ))}
-              </select>
-
-              <input
-                type="datetime-local"
-                className="w-full border p-2 rounded"
-                value={deadline}
-                onChange={(e) => setDeadline(e.target.value)}
-              />
-
-              <input
-                type="number"
-                placeholder="Extra cost (optional)"
-                className="w-full border p-2 rounded"
-                value={extraCost}
-                onChange={(e) => setExtraCost(Number(e.target.value))}
-              />
-
-              <textarea
-                placeholder="Equipment / work notes"
-                className="w-full border p-2 rounded"
-                value={equipmentNote}
-                onChange={(e) => setEquipmentNote(e.target.value)}
-              />
-
-              <button
-                onClick={handleAssign}
-                className="bg-blue-600 text-white px-6 py-2 rounded"
-              >
-                Assign & Notify
-              </button>
+        {/* HEADER */}
+        <div className="flex items-center justify-between px-8 py-5 border-b border-slate-100 bg-slate-50/50">
+          <div className="flex items-center gap-4">
+            <div className="p-2.5 bg-blue-100 text-blue-600 rounded-xl">
+              <FileText className="w-6 h-6" />
             </div>
-          )} */}
-		  {isAccepted && (
-  <div className="border-t pt-6 space-y-4 bg-slate-50 p-6 rounded-xl">
-    <h3 className="font-semibold text-lg">Assign Work</h3>
+            <div>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-0.5">Service Call Slip</p>
+              <h2 className="text-xl font-bold text-slate-900">Ticket #{ticket.id}</h2>
+            </div>
+          </div>
 
-    {/* Assign User */}
-    <select
-      className="w-full border p-2 rounded"
-      value={assignedToId ?? ""}
-      onChange={(e) => {
-        const val = e.target.value;
-        setAssignedToId(val ? Number(val) : null);
-      }}
-    >
-      <option value="">Select employee / admin</option>
-      {users.map((u) => (
-        <option key={u.id} value={u.id}>
-          {u.name} ({u.role})
-        </option>
-      ))}
-    </select>
+          <div className="flex items-center gap-4">
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 shadow-sm">
+              <Building2 className="w-4 h-4 text-slate-400" />
+              <span className="font-semibold">{ticket.unitId || FALLBACK_UNIT}</span>
+            </div>
+          </div>
+        </div>
 
-    {/* Deadline */}
-    <input
-      type="datetime-local"
-      className="w-full border p-2 rounded"
-      value={deadline}
-      onChange={(e) => setDeadline(e.target.value)}
-    />
+        {/* SCROLLABLE CONTENT */}
+        <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
 
-    {/* Extra Cost */}
-    <input
-      type="number"
-      placeholder="Extra cost (optional)"
-      className="w-full border p-2 rounded"
-      value={extraCost}
-      onChange={(e) =>
-        setExtraCost(e.target.value === "" ? "" : Number(e.target.value))
-      }
-    />
+          {/* TICKET DETAILS GRID */}
+          <section className="space-y-6">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <h3 className="text-2xl font-bold text-slate-900 mb-2">{ticket.title}</h3>
+                <div className="flex flex-wrap items-center gap-3 text-sm">
+                  <span className="text-slate-500 font-medium">Posted: {postedDate}</span>
+                  <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${statusPill(ticket.status)}`}>
+                    {ticket.status}
+                  </span>
+                </div>
+              </div>
 
-    {/* Notes */}
-    <textarea
-      placeholder="Equipment / work notes"
-      className="w-full border p-2 rounded"
-      value={equipmentNote}
-      onChange={(e) => setEquipmentNote(e.target.value)}
-    />
+              <div className="flex items-center gap-2 text-sm text-slate-600">
+                <User2 className="w-4 h-4 text-slate-400" />
+                <span>Req by: <span className="font-semibold text-slate-900">{ticket.createdBy}</span></span>
+              </div>
+            </div>
 
-    {/* Assign Button */}
-    <button
-      onClick={handleAssign}
-      disabled={!assignedToId || !deadline}
-      className={`px-6 py-2 rounded text-white ${
-        !assignedToId || !deadline
-          ? "bg-gray-400 cursor-not-allowed"
-          : "bg-blue-600 hover:bg-blue-700"
-      }`}
-    >
-      Assign & Notify
-    </button>
-  </div>
-)}
+            {/* DEPARTMENT & DESCRIPTION ROW */}
+            <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-x-8 gap-y-4">
+              {/* Department */}
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Department</p>
+                <p className="font-semibold text-slate-900 leading-snug">{ticket.department}</p>
+              </div>
+
+              {/* Description */}
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Description</p>
+                <p className="text-slate-900 leading-relaxed text-sm">{ticket.description || 'No description provided.'}</p>
+              </div>
+            </div>
+
+            {/* OTHER LOCATION DETAILS */}
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Room No</p>
+                <p className="font-semibold text-slate-900">{ticket.Room || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Bed No</p>
+                <p className="font-semibold text-slate-900">{ticket.Bed || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Floor</p>
+                <p className="font-semibold text-slate-900">{ticket.Floor || 'N/A'}</p>
+              </div>
+            </div>
+          </section>
+
+          <hr className="border-slate-100" />
+
+          {/* ACTION FORM (Hidden if accepted) */}
+          {!isAccepted && (
+            <section className="space-y-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-900">Action Date</label>
+                  {/* Custom Date Picker */}
+                  <CustomDatePicker
+                    value={actionDate}
+                    onChange={setActionDate}
+                    label="Select Date & Time"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-900">Remarks</label>
+                  <input
+                    type="text"
+                    value={remarks}
+                    onChange={(e) => setRemarks(e.target.value)}
+                    placeholder="Add any notes..."
+                    className="w-full h-[62px] px-4 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all outline-none placeholder:text-slate-400"
+                  />
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* ASSIGNMENT SECTION (Conditional) */}
+          {isAccepted && (
+            <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-6 space-y-5 animate-in slide-in-from-top-4 duration-300">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-1.5 h-6 bg-blue-500 rounded-full"></div>
+                <h3 className="font-bold text-slate-900">Assign Work</h3>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500 uppercase">Assign To</label>
+                  <CustomSelect
+                    options={users}
+                    value={assignedToId}
+                    onChange={setAssignedToId}
+                    label="Select Employee"
+                    placeholder="Choose..."
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500 uppercase">Deadline</label>
+                  <CustomDatePicker
+                    value={deadline}
+                    onChange={setDeadline}
+                    label="Select Deadline"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500 uppercase">Est. Cost</label>
+                  <input
+                    type="number"
+                    placeholder="0.00"
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 shadow-sm"
+                    value={extraCost}
+                    onChange={(e) => setExtraCost(e.target.value === "" ? "" : Number(e.target.value))}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500 uppercase">Notes</label>
+                  <input
+                    type="text"
+                    placeholder="Work notes..."
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 shadow-sm"
+                    value={equipmentNote}
+                    onChange={(e) => setEquipmentNote(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <button
+                  onClick={handleAssign}
+                  disabled={!assignedToId || !deadline}
+                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-sm font-bold rounded-xl shadow-lg shadow-blue-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  Confirm Assignment
+                </button>
+              </div>
+            </div>
+          )}
 
         </div>
+
+        {/* FOOTER ACTIONS (Hidden if accepted) */}
+        {!isAccepted && (
+          <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex items-center justify-end gap-3">
+            <button
+              onClick={handleDecline}
+              className="px-6 py-2.5 rounded-xl text-sm font-bold border border-slate-200 text-slate-600 hover:border-red-200 hover:text-red-600 hover:bg-red-50 transition-all"
+            >
+              Decline Request
+            </button>
+
+            <button
+              onClick={handleAccept}
+              className="px-8 py-2.5 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+            >
+              Accept Request
+            </button>
+          </div>
+        )}
+
       </div>
     </div>
+
   );
 };
 
 export default ServiceSlip;
+
+

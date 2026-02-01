@@ -6,15 +6,14 @@ import { axiosClient } from '../api/axiosClient';
 import {
 	Plus,
 	Search,
-	Eye,
 	Clock,
 	Calendar,
 	AlertTriangle,
 	CheckCircle,
-	User,
 	Tag,
 	FileText,
 	ChevronDown,
+	ArrowLeftRight,
 } from 'lucide-react';
 
 import AddTicketModal from './AddTicketModal';
@@ -171,49 +170,17 @@ const TicketManagement: React.FC<TicketManagementProps> = ({
 		});
 	};
 
-	const getTimeAgo = (dateString: string) => {
-		const now = new Date();
-		const date = new Date(dateString);
-		const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
 
-		if (diffInHours < 1) return 'Just now';
-		if (diffInHours < 24) return `${diffInHours}h ago`;
-		return `${Math.floor(diffInHours / 24)}d ago`;
-	};
 
 	const getPriorityColor = (priority: string) => {
-		switch (priority) {
-			case 'Critical':
-				return 'bg-red-100 text-red-700 border-red-200';
-			case 'High':
-				return 'bg-orange-100 text-orange-700 border-orange-200';
-			case 'Medium':
-				return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-			case 'Low':
-				return 'bg-green-100 text-green-700 border-green-200';
-			default:
-				return 'bg-gray-100 text-gray-700 border-gray-200';
-		}
+		const p = (priority || '').toLowerCase();
+		if (p === 'critical' || p === 'high') return 'bg-red-50 text-red-700 border border-red-200';
+		if (p === 'medium') return 'bg-yellow-50 text-yellow-700 border border-yellow-200';
+		if (p === 'low') return 'bg-green-50 text-green-700 border border-green-200';
+		return 'bg-gray-100 text-gray-700 border-gray-200';
 	};
 
-	const getStatusDotColor = (status: string) => {
-		switch (status) {
-			case 'Open':
-				return 'bg-blue-500';
-			case 'In Progress':
-				return 'bg-purple-500';
-			case 'pending':
-				return 'bg-yellow-500';
-			case 'Review Pending':
-				return 'bg-yellow-500';
-			case 'Resolved':
-				return 'bg-green-500';
-			case 'Closed':
-				return 'bg-gray-400';
-			default:
-				return 'bg-gray-400';
-		}
-	};
+
 	const getStatusColor = (status: string) => {
 		switch (status) {
 			case 'Open':
@@ -294,33 +261,77 @@ const TicketManagement: React.FC<TicketManagementProps> = ({
 		searchTerm && { label: `Search: "${searchTerm}"`, tone: 'green' as FilterTone },
 	].filter(Boolean) as { label: string; tone: FilterTone }[];
 
+	// Mock Units for dropdown
+	const MOCK_UNITS = [
+		{ id: 1, name: 'Siliguri' },
+		{ id: 2, name: 'New Town' },
+		{ id: 3, name: 'Raipur' },
+		{ id: 4, name: 'Rawdon Street' },
+		{ id: 5, name: 'Guwahati' },
+	];
+
+	const [showUnitDropdown, setShowUnitDropdown] = useState(false);
+
 	return (
-		<div className="min-h-screen  bg-gradient-to-b text-md from-slate-50 to-white py-10">
+		<div className="min-h-screen bg-gradient-to-b text-md from-slate-50 to-white py-4">
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-				<div className="bg-white/60 backdrop-blur-xl border border-white/50 shadow-glass rounded-3xl p-8 mb-6 relative overflow-hidden">
-					<div className="absolute inset-0 bg-gradient-to-br from-white/40 via-transparent to-transparent opacity-50 pointer-events-none"></div>
+				<div className="bg-white/60 backdrop-blur-xl border border-white/50 shadow-glass rounded-3xl p-8 mb-2 relative overflow-visible z-30">
+					<div className="absolute inset-0 bg-gradient-to-br from-white/40 via-transparent to-transparent opacity-50 pointer-events-none rounded-3xl"></div>
 					<div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
 						<div>
 							<div className="flex items-center gap-2 mb-2">
 								<span className="h-px w-8 bg-blue-500"></span>
 								<p className="text-xs uppercase tracking-widest text-blue-600 font-bold">Operations Center</p>
 							</div>
-							<h1 className="text-3xl md:text-4xl font-bold text-slate-800 tracking-tight">Ticket Management</h1>
-							<p className="text-slate-500 mt-3 max-w-2xl text-lg">Monitor incidents, triage requests, and ensure seamless hospital operations.</p>
+							<h1 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">Ticket Management</h1>
+							<p className="text-slate-500 mt-2 max-w-2xl text-base">Monitor incidents, triage requests, and ensure seamless hospital operations.</p>
 						</div>
 
-						<button
-							onClick={() => setShowAddModal(true)}
-							className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-500 px-8 py-4 text-white font-semibold shadow-[0_8px_30px_rgb(59,130,246,0.4)] transition-all duration-300 hover:shadow-[0_8px_40px_rgb(59,130,246,0.6)] hover:scale-105 active:scale-95"
-						>
-							<Plus className="w-5 h-5" />
-							<span>Raise Ticket</span>
-						</button>
+						<div className="flex items-center gap-4 relative">
+							<div className="relative">
+								<button
+									onClick={() => setShowUnitDropdown(!showUnitDropdown)}
+									className="inline-flex items-center gap-2 rounded-2xl bg-white border-2 border-slate-200 px-6 py-4 text-slate-700 font-bold shadow-sm hover:bg-slate-50 hover:border-slate-300 transition-all duration-300 hover:scale-105 active:scale-95"
+								>
+									<ArrowLeftRight className="w-5 h-5 text-slate-500" />
+									<span>Switch Unit</span>
+									<ChevronDown className={`w-4 h-4 text-slate-400 ml-1 transition-transform duration-200 ${showUnitDropdown ? 'rotate-180' : ''}`} />
+								</button>
+
+								{/* Unit Dropdown */}
+								{showUnitDropdown && (
+									<div className="absolute top-full left-0 mt-3 w-64 p-2 bg-white rounded-2xl border border-slate-100 shadow-xl shadow-slate-200/50 z-50 animate-in fade-in zoom-in-95 duration-200">
+										<p className="px-3 py-2 text-[10px] uppercase font-bold text-slate-400">Select Unit</p>
+										{MOCK_UNITS.map((unit) => (
+											<button
+												key={unit.id}
+												onClick={() => {
+													console.log(`Switched to unit: ${unit.name}`);
+													setShowUnitDropdown(false);
+												}}
+												className="w-full flex items-center justify-between px-3 py-3 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors text-left"
+											>
+												{unit.name}
+												{/* Indicator if active matching unitId param could go here */}
+											</button>
+										))}
+									</div>
+								)}
+							</div>
+
+							<button
+								onClick={() => setShowAddModal(true)}
+								className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-500 px-8 py-4 text-white font-semibold shadow-[0_8px_30px_rgb(59,130,246,0.4)] transition-all duration-300 hover:shadow-[0_8px_40px_rgb(59,130,246,0.6)] hover:scale-105 active:scale-95"
+							>
+								<Plus className="w-5 h-5" />
+								<span>Raise Ticket</span>
+							</button>
+						</div>
 					</div>
 				</div>
 
 
-				<div className="space-y-10 divide-y divide-slate-200">
+				<div className="space-y-2">
 					<section className="pt-2">
 						<div className="bg-transparent pt-4">
 							<div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
@@ -509,15 +520,19 @@ const TicketManagement: React.FC<TicketManagementProps> = ({
 						</div>
 					</section>
 
-					<section className="pt-10 space-y-6">
+					<section className="pt-2 space-y-2">
 						<div className="space-y-4 md:hidden">
 							{filteredTickets.map((ticket) => (
-								<div key={ticket.id} className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+								<div
+									key={ticket.id}
+									className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm active:scale-[0.98] transition-transform"
+									onClick={() => handleViewTicket(ticket)}
+								>
 									<div className="flex flex-wrap items-start gap-3">
 										<div className="flex-1">
-											<p className="text-sm uppercase tracking-wide text-slate-400">{ticket.department}</p>
-											<h3 className="text-lg font-semibold text-slate-900">{ticket.title}</h3>
-											<p className="text-sm text-slate-500 mt-1">{ticket.description}</p>
+											{/* <p className="text-sm uppercase tracking-wide text-slate-400">{ticket.department}</p> */}
+											<h3 className="text-lg font-bold text-slate-900">{ticket.title}</h3>
+											<p className="text-sm text-slate-500 mt-1 line-clamp-2">{ticket.description}</p>
 										</div>
 										<span className={`px-3 py-1 rounded-full border text-xs font-semibold ${getPriorityColor(ticket.priority)}`}>
 											{ticket.priority}
@@ -525,37 +540,33 @@ const TicketManagement: React.FC<TicketManagementProps> = ({
 									</div>
 
 									<div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
-										<span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-blue-700">
+										<span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-blue-700 border border-blue-100">
 											<Tag className="h-3.5 w-3.5" />
 											{ticket.category}
 										</span>
-										<span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-slate-600">
-											<User className="h-3.5 w-3.5" />
-											{ticket.assignedTo || 'Unassigned'}
+
+										{/* Assigned To Department Badge */}
+										<span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 font-medium border border-indigo-100">
+											{ticket.department || 'Unassigned'}
 										</span>
+
 										<span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 ${getStatusColor(ticket.status)} border border-slate-100`}>
-											<span className={`h-2 w-2 rounded-full ${getStatusDotColor(ticket.status)}`} />
 											{ticket.status}
 										</span>
 									</div>
 
 									<div className="mt-4 flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
-										<div>
-											<p className="text-xs uppercase tracking-wide text-slate-400">Created</p>
-											<p className="text-sm font-semibold text-slate-900">{getTimeAgo(ticket.createdAt)}</p>
-											<p className="text-xs text-slate-400">{formatDate(ticket.createdAt)}</p>
+										<div className="flex items-center gap-2 text-xs text-slate-400">
+											<Clock className="w-3.5 h-3.5" />
+											<span>{formatDate(ticket.createdAt)}</span>
 										</div>
-										<div className="flex flex-wrap items-center gap-2">
+										<div className="flex flex-wrap items-center gap-2 ml-auto">
 											<button
-												onClick={() => handleViewTicket(ticket)}
-												className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-4 py-2 text-sm font-medium text-blue-600"
-											>
-												<Eye className="h-4 w-4" />
-												View
-											</button>
-											<button
-												onClick={() => handleSlip(ticket)}
-												className="inline-flex items-center justify-center rounded-full border border-slate-200 p-2 text-slate-500 hover:text-blue-600 hover:border-blue-300"
+												onClick={(e) => {
+													e.stopPropagation();
+													handleSlip(ticket);
+												}}
+												className="inline-flex items-center justify-center rounded-full border border-slate-200 p-2 text-slate-500 hover:text-blue-600 hover:border-blue-300 bg-white"
 												title="Service call slip"
 											>
 												<FileText className="h-4 w-4" />
@@ -578,75 +589,51 @@ const TicketManagement: React.FC<TicketManagementProps> = ({
 									<thead>
 										<tr className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider bg-slate-50">
 											<th className="px-6 py-4">Ticket</th>
-											<th className="px-6 py-4">Category</th>
-											<th className="px-6 py-4">Priority</th>
-											<th className="px-6 py-4">Status</th>
-											<th className="px-6 py-4">Assigned To</th>
-											<th className="px-6 py-4">Created</th>
+											<th className="px-6 py-4 text-center">Category</th>
+											<th className="px-6 py-4 text-center">Priority</th>
+											<th className="px-6 py-4 text-center">Status</th>
+											<th className="px-6 py-4 text-center">Assigned To</th>
 											<th className="px-6 py-4 text-right">Actions</th>
 										</tr>
 									</thead>
 									<tbody className="divide-y divide-slate-100">
 										{filteredTickets.map((ticket) => (
-											<tr key={ticket.id} className="hover:bg-slate-50/60 transition">
+											<tr
+												key={ticket.id}
+												className="hover:bg-slate-50/60 transition cursor-pointer"
+												onClick={() => handleViewTicket(ticket)}
+											>
 												<td className="px-6 py-4 align-top">
-													<p className="font-semibold text-slate-900">{ticket.title}</p>
-													<p className="text-sm text-slate-500 mt-1 line-clamp-2">{ticket.description}</p>
-													<div className="flex items-center gap-2 text-xs text-slate-400 mt-2">
-														<User className="w-4 h-4" />
-
-														<span className="text-slate-300">•</span>
-														<span>{ticket.department}</span>
+													<div className="max-w-md">
+														<h4 className="text-base font-bold text-slate-900 mb-1.5">{ticket.title}</h4>
+														<p className="text-sm text-slate-600 line-clamp-2 leading-relaxed">{ticket.description}</p>
 													</div>
 												</td>
-												<td className="px-6 py-4 align-top">
+												<td className="px-6 py-4 align-top text-center">
 													<span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold">{ticket.category}</span>
 												</td>
-												<td className="px-6 py-4 align-top">
-													<span className={`px-3 py-1 rounded-full border text-xs font-semibold ${getPriorityColor(ticket.priority)}`}>
+												<td className="px-6 py-4 align-top text-center">
+													<span className={`px-3 py-1 rounded-full text-xs font-semibold ${['critical', 'high'].includes((ticket.priority || '').toLowerCase())
+														? 'bg-red-50 text-red-700 border border-red-200'
+														: (ticket.priority || '').toLowerCase() === 'medium'
+															? 'bg-yellow-50 text-yellow-700 border border-yellow-200'
+															: 'bg-green-50 text-green-700 border border-green-200'
+														}`}>
 														{ticket.priority}
 													</span>
 												</td>
-												<td className="px-6 py-4 align-top">
-													<div className="flex items-center gap-2">
-														<span className={`w-2 h-2 rounded-full ${getStatusDotColor(ticket.status)}`} />
-														<span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(ticket.status)}`}>
-															{ticket.status}
-														</span>
-													</div>
+												<td className="px-6 py-4 align-top text-center">
+													<span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(ticket.status)}`}>
+														{ticket.status}
+													</span>
 												</td>
-												<td className="px-6 py-4 align-top">
-													{ticket.assignedTo ? (
-														<div className="flex items-center gap-3">
-															<div className="w-9 h-9 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center font-semibold">
-																{ticket.assignedTo
-																	.split(' ')
-																	.map((part) => part.charAt(0))
-																	.join('')
-																	.slice(0, 2)}
-															</div>
-															<div>
-																<p className="text-sm font-semibold text-slate-900">{ticket.assignedTo}</p>
-																<p className="text-xs text-slate-400">Owner</p>
-															</div>
-														</div>
-													) : (
-														<span className="text-slate-400 text-sm">Unassigned</span>
-													)}
+												<td className="px-6 py-4 align-top text-center">
+													<span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 text-sm font-medium border border-indigo-100 ring-1 ring-indigo-50/50">
+														{ticket.department || 'Unassigned'}
+													</span>
 												</td>
-												<td className="px-6 py-4 align-top">
-													<p className="text-sm font-semibold text-slate-900">{getTimeAgo(ticket.createdAt)}</p>
-													<p className="text-xs text-slate-400">{formatDate(ticket.createdAt)}</p>
-												</td>
-												<td className="px-6 py-4 align-top text-right">
+												<td className="px-6 py-4 align-top text-right" onClick={(e) => e.stopPropagation()}>
 													<div className="flex justify-end gap-3">
-														<button
-															onClick={() => handleViewTicket(ticket)}
-															className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100"
-														>
-															<Eye className="w-4 h-4" />
-															View
-														</button>
 														<button
 															onClick={() => handleSlip(ticket)}
 															className="inline-flex items-center justify-center rounded-full border border-slate-200 p-2 text-slate-500 hover:text-blue-600 hover:border-blue-300"
@@ -688,7 +675,6 @@ const TicketManagement: React.FC<TicketManagementProps> = ({
 						onClose={() => handleViewTicket(null)}
 						ticket={selectedTicket}
 						onUpdate={handleUpdateTicket}
-						equipments={[]}
 					/>
 				)}
 				{showSlip && selectedTicket && (
