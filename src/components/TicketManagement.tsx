@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Ticket, } from '../types';
 import { TICKET_CATEGORIES } from '../constants/category';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { axiosClient } from '../api/axiosClient';
 import {
 	Plus,
@@ -261,16 +261,28 @@ const TicketManagement: React.FC<TicketManagementProps> = ({
 		searchTerm && { label: `Search: "${searchTerm}"`, tone: 'green' as FilterTone },
 	].filter(Boolean) as { label: string; tone: FilterTone }[];
 
-	// Mock Units for dropdown
-	const MOCK_UNITS = [
-		{ id: 1, name: 'Siliguri' },
-		{ id: 2, name: 'New Town' },
-		{ id: 3, name: 'Raipur' },
-		{ id: 4, name: 'Rawdon Street' },
-		{ id: 5, name: 'Guwahati' },
-	];
+	// Use API Units for dropdown
+	interface Unit {
+		id: number;
+		name: string;
+	}
+	const [units, setUnits] = useState<Unit[]>([]);
+	const navigate = useNavigate();
+
+	useEffect(() => {
+		axiosClient.get("/units")
+			.then(res => setUnits(res.data))
+			.catch(err => console.error(err));
+	}, []);
 
 	const [showUnitDropdown, setShowUnitDropdown] = useState(false);
+
+	const handleSwitchUnit = (unitId: number) => {
+		// Navigate to the new unit page & close dropdown
+		navigate(`/unit/${unitId}/tickets`);
+		window.location.reload(); // Ensure fresh data load if needed
+		setShowUnitDropdown(false);
+	};
 
 	return (
 		<div className="min-h-screen bg-gradient-to-b text-md from-slate-50 to-white py-4">
@@ -300,19 +312,17 @@ const TicketManagement: React.FC<TicketManagementProps> = ({
 
 								{/* Unit Dropdown */}
 								{showUnitDropdown && (
-									<div className="absolute top-full left-0 mt-3 w-64 p-2 bg-white rounded-2xl border border-slate-100 shadow-xl shadow-slate-200/50 z-50 animate-in fade-in zoom-in-95 duration-200">
-										<p className="px-3 py-2 text-[10px] uppercase font-bold text-slate-400">Select Unit</p>
-										{MOCK_UNITS.map((unit) => (
+									<div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2">
+										{units.map((unit) => (
 											<button
 												key={unit.id}
-												onClick={() => {
-													console.log(`Switched to unit: ${unit.name}`);
-													setShowUnitDropdown(false);
-												}}
-												className="w-full flex items-center justify-between px-3 py-3 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors text-left"
+												onClick={() => handleSwitchUnit(unit.id)}
+												className={`w-full text-left px-4 py-3 transition-colors font-medium text-sm flex items-center justify-between group ${Number(unitId) === unit.id
+													? 'bg-blue-50 text-blue-600'
+													: 'text-slate-600 hover:bg-slate-50 hover:text-blue-600'
+													}`}
 											>
 												{unit.name}
-												{/* Indicator if active matching unitId param could go here */}
 											</button>
 										))}
 									</div>

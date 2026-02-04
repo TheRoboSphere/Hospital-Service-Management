@@ -1,16 +1,22 @@
 import { useNavigate } from "react-router-dom";
 import { Building2, ChevronRight } from "lucide-react";
+import { useEffect, useState } from "react";
+import { axiosClient } from "../api/axiosClient";
 
-const UNITS = [
-  { id: 1, name: "Neotia Getwel Multispecialty Hospital - Siliguri" },
-  { id: 2, name: "Neotia Bhagirathi Women & Child Care Center - Rawdon Street" },
-  { id: 3, name: "Neotia Bhagirathi Women & Child Care Center - New Town" },
-  { id: 4, name: "Neotia Bhagirathi Woman and Child Care Centre – Guwahati" },
-  { id: 5, name: "Neotia Bhagirathi Woman and Child Care Centre – Raipur" },
-];
+interface Unit {
+  id: number;
+  name: string;
+}
 
 const SelectUnitPage = () => {
   const navigate = useNavigate();
+  const [units, setUnits] = useState<Unit[]>([]);
+
+  useEffect(() => {
+    axiosClient.get("/units")
+      .then(res => setUnits(res.data))
+      .catch(err => console.error(err));
+  }, []);
 
   const handleSelect = (unitId: number) => {
     navigate(`/unit/${unitId}/tickets`);
@@ -56,7 +62,7 @@ const SelectUnitPage = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:overflow-y-auto custom-scrollbar p-3 md:p-8">
-              {UNITS.map((u) => {
+              {units.map((u) => {
                 const [hospitalName, location] = u.name.split(' - ');
                 const [hospitalName2, location2] = u.name.split(' – ');
                 // Handle both hyphen types
