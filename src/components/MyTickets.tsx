@@ -252,7 +252,7 @@ const MyTickets = () => {
       {
         showModal && selectedTicket && (
           <div onClick={() => setShowModal(false)} className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-            <div onClick={(e) => e.stopPropagation()} className="bg-white/80 backdrop-blur-xl border border-white/50 shadow-2xl rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200">
+            <div onClick={(e) => e.stopPropagation()} className="bg-white/80 backdrop-blur-xl border border-white/50 shadow-2xl rounded-2xl max-w-sm w-full max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200">
               <div className="p-6 border-b border-slate-200/60">
                 <h2 className="text-2xl font-bold text-slate-800">{selectedTicket.title}</h2>
                 <div className="flex space-x-2 mt-3">
@@ -275,12 +275,26 @@ const MyTickets = () => {
               </div>
 
               <div className="p-8 space-y-8">
+                {/* Assignment Section (Moved Up) */}
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider mb-3">Assignment</h3>
+                  <div className="space-y-3 text-sm">
+                    {selectedTicket.assignedToName ? (
+                      <p className="text-slate-600"><strong className="text-slate-800">Assigned to:</strong> {selectedTicket.assignedToName}</p>
+                    ) : (
+                      <div className="flex items-center text-slate-400 italic bg-slate-50 px-3 py-2 rounded-lg">
+                        <User size={16} className="mr-2" /> Not assigned
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 <div>
                   <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider mb-2">Description</h3>
                   <p className="text-slate-600 leading-relaxed">{selectedTicket.description}</p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 gap-6">
                   <div>
                     <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider mb-3">Details</h3>
                     <div className="space-y-3 text-sm text-slate-600">
@@ -289,19 +303,6 @@ const MyTickets = () => {
                       <p><strong className="text-slate-800">Created:</strong> {new Date(selectedTicket.createdAt).toLocaleString()}</p>
                       {selectedTicket.Floor && (
                         <p><strong className="text-slate-800">Location:</strong> Floor {selectedTicket.Floor}, Room {selectedTicket.Room}, Bed {selectedTicket.Bed}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider mb-3">Assignment</h3>
-                    <div className="space-y-3 text-sm">
-                      {selectedTicket.assignedToName ? (
-                        <p className="text-slate-600"><strong className="text-slate-800">Assigned to:</strong> {selectedTicket.assignedToName}</p>
-                      ) : (
-                        <div className="flex items-center text-slate-400 italic bg-slate-50 px-3 py-2 rounded-lg">
-                          <User size={16} className="mr-2" /> Not assigned
-                        </div>
                       )}
                     </div>
                   </div>

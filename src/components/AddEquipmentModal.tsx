@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Equipment } from '../types';
-import { X,  } from 'lucide-react';
+import { X } from 'lucide-react';
 
 interface AddEquipmentModalProps {
   isOpen: boolean;
@@ -16,6 +16,7 @@ const AddEquipmentModal: React.FC<AddEquipmentModalProps> = ({
   equipment
 }) => {
   const [formData, setFormData] = useState<Omit<Equipment, 'id'>>({
+    unitId: 0,
     name: '',
     category: '',
     serialNumber: '',
@@ -35,6 +36,7 @@ const AddEquipmentModal: React.FC<AddEquipmentModalProps> = ({
   useEffect(() => {
     if (equipment) {
       setFormData({
+        unitId: equipment.unitId || 0,
         name: equipment.name,
         category: equipment.category,
         serialNumber: equipment.serialNumber,
@@ -50,6 +52,7 @@ const AddEquipmentModal: React.FC<AddEquipmentModalProps> = ({
       });
     } else {
       setFormData({
+        unitId: 0,
         name: '',
         category: '',
         serialNumber: '',
@@ -116,7 +119,7 @@ const AddEquipmentModal: React.FC<AddEquipmentModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     const newEquipment: Equipment = {
@@ -162,9 +165,8 @@ const AddEquipmentModal: React.FC<AddEquipmentModalProps> = ({
                 type="text"
                 value={formData.name}
                 onChange={(e) => handleChange('name', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.name ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.name ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 placeholder="Enter equipment name"
               />
               {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
@@ -178,9 +180,8 @@ const AddEquipmentModal: React.FC<AddEquipmentModalProps> = ({
               <select
                 value={formData.category}
                 onChange={(e) => handleChange('category', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.category ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.category ? 'border-red-500' : 'border-gray-300'
+                  }`}
               >
                 <option value="">Select category</option>
                 {categories.map(cat => (
@@ -199,9 +200,8 @@ const AddEquipmentModal: React.FC<AddEquipmentModalProps> = ({
                 type="text"
                 value={formData.serialNumber}
                 onChange={(e) => handleChange('serialNumber', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.serialNumber ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.serialNumber ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 placeholder="Enter serial number"
               />
               {errors.serialNumber && <p className="text-red-500 text-sm mt-1">{errors.serialNumber}</p>}
@@ -216,9 +216,8 @@ const AddEquipmentModal: React.FC<AddEquipmentModalProps> = ({
                 type="text"
                 value={formData.manufacturer}
                 onChange={(e) => handleChange('manufacturer', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.manufacturer ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.manufacturer ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 placeholder="Enter manufacturer"
               />
               {errors.manufacturer && <p className="text-red-500 text-sm mt-1">{errors.manufacturer}</p>}
@@ -233,9 +232,8 @@ const AddEquipmentModal: React.FC<AddEquipmentModalProps> = ({
                 type="text"
                 value={formData.model}
                 onChange={(e) => handleChange('model', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.model ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.model ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 placeholder="Enter model"
               />
               {errors.model && <p className="text-red-500 text-sm mt-1">{errors.model}</p>}
@@ -249,9 +247,8 @@ const AddEquipmentModal: React.FC<AddEquipmentModalProps> = ({
               <select
                 value={formData.location}
                 onChange={(e) => handleChange('location', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.location ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.location ? 'border-red-500' : 'border-gray-300'
+                  }`}
               >
                 <option value="">Select location</option>
                 {locations.map(loc => (
@@ -286,9 +283,8 @@ const AddEquipmentModal: React.FC<AddEquipmentModalProps> = ({
                 type="number"
                 value={formData.cost}
                 onChange={(e) => handleChange('cost', parseFloat(e.target.value))}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.cost ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.cost ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 placeholder="Enter cost"
                 min="0"
                 step="0.01"
@@ -305,9 +301,8 @@ const AddEquipmentModal: React.FC<AddEquipmentModalProps> = ({
                 type="date"
                 value={formData.purchaseDate}
                 onChange={(e) => handleChange('purchaseDate', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.purchaseDate ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.purchaseDate ? 'border-red-500' : 'border-gray-300'
+                  }`}
               />
               {errors.purchaseDate && <p className="text-red-500 text-sm mt-1">{errors.purchaseDate}</p>}
             </div>

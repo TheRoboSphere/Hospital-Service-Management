@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { Ticket, } from '../types';
 import { TICKET_CATEGORIES } from '../constants/category';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -277,6 +277,22 @@ const TicketManagement: React.FC<TicketManagementProps> = ({
 
 	const [showUnitDropdown, setShowUnitDropdown] = useState(false);
 
+	// Click outside to close unit dropdown
+	const unitDropdownRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			if (unitDropdownRef.current && !unitDropdownRef.current.contains(event.target as Node)) {
+				setShowUnitDropdown(false);
+			}
+		};
+
+		document.addEventListener('mousedown', handleClickOutside);
+		return () => {
+			document.removeEventListener('mousedown', handleClickOutside);
+		};
+	}, []);
+
 	const handleSwitchUnit = (unitId: number) => {
 		// Navigate to the new unit page & close dropdown
 		navigate(`/unit/${unitId}/tickets`);
@@ -300,7 +316,7 @@ const TicketManagement: React.FC<TicketManagementProps> = ({
 						</div>
 
 						<div className="flex items-center gap-4 relative">
-							<div className="relative">
+							<div className="relative" ref={unitDropdownRef}>
 								<button
 									onClick={() => setShowUnitDropdown(!showUnitDropdown)}
 									className="inline-flex items-center gap-2 rounded-2xl bg-white border-2 border-slate-200 px-6 py-4 text-slate-700 font-bold shadow-sm hover:bg-slate-50 hover:border-slate-300 transition-all duration-300 hover:scale-105 active:scale-95"
