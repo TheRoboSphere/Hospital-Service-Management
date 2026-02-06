@@ -1,20 +1,19 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Ticket,  } from '../types';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
+import { Ticket, } from '../types';
 import { TICKET_CATEGORIES } from '../constants/category';
-import { useParams  } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { axiosClient } from '../api/axiosClient';
 import {
 	Plus,
 	Search,
-	Filter,
-	Eye,
 	Clock,
 	Calendar,
 	AlertTriangle,
 	CheckCircle,
-	User,
 	Tag,
 	FileText,
+	ChevronDown,
+	ArrowLeftRight,
 } from 'lucide-react';
 
 import AddTicketModal from './AddTicketModal';
@@ -30,8 +29,6 @@ interface TicketManagementProps {
 	// onSlip: (ticket: Ticket) => void;
 }
 
-
-const statusOptions = ['all', 'Open', 'In Progress', 'Pending', 'Resolved', 'Closed'];
 const priorityOptions = ['all', 'Low', 'Medium', 'High', 'Critical'];
 
 
@@ -59,97 +56,101 @@ const TicketManagement: React.FC<TicketManagementProps> = ({
 	//const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
 	const [showDetailsModal, setShowDetailsModal] = useState(false);
 
-
-
-	  const [tickets, setTickets] = useState<Ticket[]>([]);
-
-  //const [reviewTicket, setReviewTicket] = useState<Ticket | null>(null);
-  const [showSlip, setShowSlip] = useState(false);
-  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
- // const [selectedUnitId, setSelectedUnitId] = useState<number | null>(null);
-
-    const handleAddTicket = async (ticket: Ticket) => {
-    setTickets((prev) => [...prev, ticket]);
-  };
-
-  const handleUpdateTicket = async (updated: Ticket) => {
-    setTickets((prev) =>
-      prev.map((t) => (t.id === updated.id ? updated : t))
-    );
-  };
+	// Dropdown states
+	const [showPriorityDropdown, setShowPriorityDropdown] = useState(false);
+	const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
 
 
 
-const { unitId } = useParams();
+	const [tickets, setTickets] = useState<Ticket[]>([]);
+
+	//const [reviewTicket, setReviewTicket] = useState<Ticket | null>(null);
+	const [showSlip, setShowSlip] = useState(false);
+	const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+	// const [selectedUnitId, setSelectedUnitId] = useState<number | null>(null);
+
+	const handleAddTicket = async (ticket: Ticket) => {
+		setTickets((prev) => [...prev, ticket]);
+	};
+
+	const handleUpdateTicket = async (updated: Ticket) => {
+		setTickets((prev) =>
+			prev.map((t) => (t.id === updated.id ? updated : t))
+		);
+	};
 
 
-const handleSlip = (ticket: Ticket) => {
-  setSelectedTicket(ticket);
-  setShowSlip(true);
-};
+
+	const { unitId } = useParams();
 
 
-// useEffect(() => {
+	const handleSlip = (ticket: Ticket) => {
+		setSelectedTicket(ticket);
+		setShowSlip(true);
+	};
 
- 
-  
-//   const fetchTickets = async () => {
-// 	try {
-	
-// 	  const res = await axiosClient.get("/tickets",{
-// 		params: {unitId:selectUnitId},
-// 	  });
 
-// 	  const tickets = res.data.tickets.map((t: any) => ({
-// 		...t,
-// 		comments: t.comments ?? [],
-// 		attachments: t.attachments ?? [],
-// 		assignedTo: t.assignedTo ?? null,
-// 	  }));
+	// useEffect(() => {
 
-// 	  setTickets(tickets);
 
-// 	} catch (err: any) {
-//   console.error("Failed to fetch tickets");
-//   console.error("STATUS:", err?.response?.status);
-//   console.error("DATA:", err?.response?.data);
-//   console.error("MESSAGE:", err?.message);
-// }
-//   };
 
-//   fetchTickets();
-// }, [ unitId]);
+	//   const fetchTickets = async () => {
+	// 	try {
+
+	// 	  const res = await axiosClient.get("/tickets",{
+	// 		params: {unitId:selectUnitId},
+	// 	  });
+
+	// 	  const tickets = res.data.tickets.map((t: any) => ({
+	// 		...t,
+	// 		comments: t.comments ?? [],
+	// 		attachments: t.attachments ?? [],
+	// 		assignedTo: t.assignedTo ?? null,
+	// 	  }));
+
+	// 	  setTickets(tickets);
+
+	// 	} catch (err: any) {
+	//   console.error("Failed to fetch tickets");
+	//   console.error("STATUS:", err?.response?.status);
+	//   console.error("DATA:", err?.response?.data);
+	//   console.error("MESSAGE:", err?.message);
+	// }
+	//   };
+
+	//   fetchTickets();
+	// }, [ unitId]);
 	useEffect(() => {
-  if (!unitId) return;
+		if (!unitId) return;
 
-  const fetchTickets = async () => {
-    try {
-      const res = await axiosClient.get(
-        `/tickets/unit/${unitId}`
-      );
+		const fetchTickets = async () => {
+			try {
+				const res = await axiosClient.get(
+					`/tickets/unit/${unitId}`
+				);
 
-      const normalized = res.data.tickets.map((t: any) => ({
-        ...t,
-        comments: t.comments ?? [],
-        attachments: t.attachments ?? [],
-        assignedTo: t.assignedTo ?? null,
-      }));
+				const normalized = res.data.tickets.map((t: any) => ({
+					...t,
+					comments: t.comments ?? [],
+					attachments: t.attachments ?? [],
+					assignedTo: t.assignedTo ?? null,
+				}));
 
-      setTickets(normalized);
-    } catch (err: any) {
-      console.error("Failed to fetch tickets", err?.response?.data);
-    }
-  };
+				setTickets(normalized);
+			} catch (err: any) {
+				console.error("Failed to fetch tickets", err?.response?.data);
+			}
+		};
 
-  fetchTickets();
-}, [unitId]);
-	
-	
+		fetchTickets();
+	}, [unitId]);
+
+
 	const filteredTickets = useMemo(() => {
 		return tickets.filter((ticket) => {
 			const matchesSearch =
 				ticket.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-				ticket.description.toLowerCase().includes(searchTerm.toLowerCase()) ;
+				ticket.description.toLowerCase().includes(searchTerm.toLowerCase());
 
 			const matchesStatus = statusFilter === 'all' || ticket.status === statusFilter;
 			const matchesPriority = priorityFilter === 'all' || ticket.priority === priorityFilter;
@@ -169,49 +170,17 @@ const handleSlip = (ticket: Ticket) => {
 		});
 	};
 
-	const getTimeAgo = (dateString: string) => {
-		const now = new Date();
-		const date = new Date(dateString);
-		const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
 
-		if (diffInHours < 1) return 'Just now';
-		if (diffInHours < 24) return `${diffInHours}h ago`;
-		return `${Math.floor(diffInHours / 24)}d ago`;
-	};
 
 	const getPriorityColor = (priority: string) => {
-		switch (priority) {
-			case 'Critical':
-				return 'bg-red-100 text-red-700 border-red-200';
-			case 'High':
-				return 'bg-orange-100 text-orange-700 border-orange-200';
-			case 'Medium':
-				return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-			case 'Low':
-				return 'bg-green-100 text-green-700 border-green-200';
-			default:
-				return 'bg-gray-100 text-gray-700 border-gray-200';
-		}
+		const p = (priority || '').toLowerCase();
+		if (p === 'critical' || p === 'high') return 'bg-red-50 text-red-700 border border-red-200';
+		if (p === 'medium') return 'bg-yellow-50 text-yellow-700 border border-yellow-200';
+		if (p === 'low') return 'bg-green-50 text-green-700 border border-green-200';
+		return 'bg-gray-100 text-gray-700 border-gray-200';
 	};
 
-	const getStatusDotColor = (status: string) => {
-		switch (status) {
-			case 'Open':
-				return 'bg-blue-500';
-			case 'In Progress':
-				return 'bg-purple-500';
-			case 'pending':
-				return 'bg-yellow-500';
-			case 'Review Pending':
-				return 'bg-yellow-500';
-			case 'Resolved':
-				return 'bg-green-500';
-			case 'Closed':
-				return 'bg-gray-400';
-			default:
-				return 'bg-gray-400';
-		}
-	};
+
 	const getStatusColor = (status: string) => {
 		switch (status) {
 			case 'Open':
@@ -234,8 +203,8 @@ const handleSlip = (ticket: Ticket) => {
 		{
 			title: 'Total Tickets',
 			value: tickets.length,
-			accent: 'from-blue-500/80 to-blue-600',
-			icon: <Tag className="w-6 h-6 text-white" />,
+			color: 'blue',
+			icon: <Tag className="w-5 h-5" />,
 			onClick: () => {
 				setStatusFilter('all');
 				setPriorityFilter('all');
@@ -245,36 +214,36 @@ const handleSlip = (ticket: Ticket) => {
 		{
 			title: 'Open',
 			value: tickets.filter((t) => t.status === 'Open').length,
-			accent: 'from-sky-500 to-blue-600',
-			icon: <Clock className="w-6 h-6 text-white" />,
+			color: 'sky',
+			icon: <Clock className="w-5 h-5" />,
 			onClick: () => setStatusFilter('Open'),
 		},
 		{
 			title: 'In Progress',
 			value: tickets.filter((t) => t.status === 'In Progress').length,
-			accent: 'from-purple-500 to-indigo-600',
-			icon: <Clock className="w-6 h-6 text-white" />,
+			color: 'purple',
+			icon: <Clock className="w-5 h-5" />,
 			onClick: () => setStatusFilter('In Progress'),
 		},
 		{
 			title: 'Pending',
 			value: tickets.filter((t) => t.status === 'Pending').length,
-			accent: 'from-amber-400 to-orange-500',
-			icon: <Calendar className="w-6 h-6 text-white" />,
+			color: 'amber',
+			icon: <Calendar className="w-5 h-5" />,
 			onClick: () => setStatusFilter('Pending'),
 		},
 		{
 			title: 'Resolved',
 			value: tickets.filter((t) => t.status === 'Resolved').length,
-			accent: 'from-emerald-500 to-green-600',
-			icon: <CheckCircle className="w-6 h-6 text-white" />,
+			color: 'emerald',
+			icon: <CheckCircle className="w-5 h-5" />,
 			onClick: () => setStatusFilter('Resolved'),
 		},
 		{
 			title: 'Closed',
 			value: tickets.filter((t) => t.status === 'Closed').length,
-			accent: 'from-rose-500 to-pink-600',
-			icon: <AlertTriangle className="w-6 h-6 text-white" />,
+			color: 'rose',
+			icon: <AlertTriangle className="w-5 h-5" />,
 			onClick: () => setStatusFilter('Closed'),
 		},
 	];
@@ -292,319 +261,429 @@ const handleSlip = (ticket: Ticket) => {
 		searchTerm && { label: `Search: "${searchTerm}"`, tone: 'green' as FilterTone },
 	].filter(Boolean) as { label: string; tone: FilterTone }[];
 
+	// Use API Units for dropdown
+	interface Unit {
+		id: number;
+		name: string;
+	}
+	const [units, setUnits] = useState<Unit[]>([]);
+	const navigate = useNavigate();
+
+	useEffect(() => {
+		axiosClient.get("/units")
+			.then(res => setUnits(res.data))
+			.catch(err => console.error(err));
+	}, []);
+
+	const [showUnitDropdown, setShowUnitDropdown] = useState(false);
+
+	// Click outside to close unit dropdown
+	const unitDropdownRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			if (unitDropdownRef.current && !unitDropdownRef.current.contains(event.target as Node)) {
+				setShowUnitDropdown(false);
+			}
+		};
+
+		document.addEventListener('mousedown', handleClickOutside);
+		return () => {
+			document.removeEventListener('mousedown', handleClickOutside);
+		};
+	}, []);
+
+	const handleSwitchUnit = (unitId: number) => {
+		// Navigate to the new unit page & close dropdown
+		navigate(`/unit/${unitId}/tickets`);
+		window.location.reload(); // Ensure fresh data load if needed
+		setShowUnitDropdown(false);
+	};
+
 	return (
-		<div className="min-h-screen  bg-gradient-to-b text-md from-slate-50 to-white py-10">
+		<div className="min-h-screen bg-gradient-to-b text-md from-slate-50 to-white py-4">
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-				<div className="bg-white rounded-2xl shadow-sm  p-6 mb-2 border-2 border-blue-100 ring-1 ring-blue-100">
-					<div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between ">
+				<div className="bg-white/60 backdrop-blur-xl border border-white/50 shadow-glass rounded-3xl p-8 mb-2 relative overflow-visible z-30">
+					<div className="absolute inset-0 bg-gradient-to-br from-white/40 via-transparent to-transparent opacity-50 pointer-events-none rounded-3xl"></div>
+					<div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
 						<div>
-							<p className="text-sm uppercase tracking-[0.3em] text-blue-500 font-semibold">Operations</p>
-							<h1 className="text-3xl md:text-4xl font-bold text-slate-900 mt-2">Ticket Management</h1>
-							<p className="text-slate-500 mt-2">Monitor incidents, triage requests, and keep wards running smoothly.</p>
+							<div className="flex items-center gap-2 mb-2">
+								<span className="h-px w-8 bg-blue-500"></span>
+								<p className="text-xs uppercase tracking-widest text-blue-600 font-bold">Operations Center</p>
+							</div>
+							<h1 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">Ticket Management</h1>
+							<p className="text-slate-500 mt-2 max-w-2xl text-base">Monitor incidents, triage requests, and ensure seamless hospital operations.</p>
 						</div>
 
-						<button
-							onClick={() => setShowAddModal(true)}
-							className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-600 to-blue-500 px-6 py-3 text-white font-semibold shadow-lg shadow-blue-500/20 transition hover:shadow-blue-500/40 focus:outline-none focus:ring-4 focus:ring-blue-200"
-						>
-							<Plus className="w-5 h-5" />
-							Raise Ticket
-						</button>
+						<div className="flex items-center gap-4 relative">
+							<div className="relative" ref={unitDropdownRef}>
+								<button
+									onClick={() => setShowUnitDropdown(!showUnitDropdown)}
+									className="inline-flex items-center gap-2 rounded-2xl bg-white border-2 border-slate-200 px-6 py-4 text-slate-700 font-bold shadow-sm hover:bg-slate-50 hover:border-slate-300 transition-all duration-300 hover:scale-105 active:scale-95"
+								>
+									<ArrowLeftRight className="w-5 h-5 text-slate-500" />
+									<span>Switch Unit</span>
+									<ChevronDown className={`w-4 h-4 text-slate-400 ml-1 transition-transform duration-200 ${showUnitDropdown ? 'rotate-180' : ''}`} />
+								</button>
+
+								{/* Unit Dropdown */}
+								{showUnitDropdown && (
+									<div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2">
+										{units.map((unit) => (
+											<button
+												key={unit.id}
+												onClick={() => handleSwitchUnit(unit.id)}
+												className={`w-full text-left px-4 py-3 transition-colors font-medium text-sm flex items-center justify-between group ${Number(unitId) === unit.id
+													? 'bg-blue-50 text-blue-600'
+													: 'text-slate-600 hover:bg-slate-50 hover:text-blue-600'
+													}`}
+											>
+												{unit.name}
+											</button>
+										))}
+									</div>
+								)}
+							</div>
+
+							<button
+								onClick={() => setShowAddModal(true)}
+								className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-500 px-8 py-4 text-white font-semibold shadow-[0_8px_30px_rgb(59,130,246,0.4)] transition-all duration-300 hover:shadow-[0_8px_40px_rgb(59,130,246,0.6)] hover:scale-105 active:scale-95"
+							>
+								<Plus className="w-5 h-5" />
+								<span>Raise Ticket</span>
+							</button>
+						</div>
 					</div>
 				</div>
 
 
-				<div className="space-y-10 divide-y divide-slate-200">
+				<div className="space-y-2">
 					<section className="pt-2">
-						<div className="rounded-2xl border-2 border-blue-100 bg-white/80 p-4 shadow-sm">
-							<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-								{statCards.map((card) => (
-									<button
-										key={card.title}
-										onClick={card.onClick}
-										className="w-full rounded-2xl bg-white border border-slate-100 shadow-sm hover:shadow-lg transition-all duration-200 group text-left relative"
-									>
-										<div className="p-5 flex items-start justify-between">
-											<div>
-												<p className="text-slate-500 text-sm">{card.title}</p>
-												<p className="text-3xl font-bold text-slate-900 mt-1">{card.value}</p>
-											</div>
-											<div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${card.accent} flex items-center justify-center shadow-inner`}>
+						<div className="bg-transparent pt-4">
+							<div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+								{statCards.map((card) => {
+									const isActive = (card.title === 'Total Tickets' && statusFilter === 'all') || card.title === statusFilter;
+
+									// Color mapping for dynamic classes
+									const colorMap: Record<string, { bg: string, light: string, icon: string, ring: string }> = {
+										blue: { bg: 'bg-blue-500', light: 'bg-blue-200', icon: 'bg-blue-500', ring: 'ring-blue-500' },
+										sky: { bg: 'bg-sky-500', light: 'bg-sky-200', icon: 'bg-sky-500', ring: 'ring-sky-500' },
+										purple: { bg: 'bg-purple-500', light: 'bg-purple-200', icon: 'bg-purple-500', ring: 'ring-purple-500' },
+										amber: { bg: 'bg-amber-500', light: 'bg-amber-200', icon: 'bg-amber-500', ring: 'ring-amber-500' },
+										emerald: { bg: 'bg-emerald-500', light: 'bg-emerald-200', icon: 'bg-emerald-500', ring: 'ring-emerald-500' },
+										rose: { bg: 'bg-rose-500', light: 'bg-rose-200', icon: 'bg-rose-500', ring: 'ring-rose-500' },
+									};
+									const colors = colorMap[card.color] || colorMap.blue;
+
+									return (
+										<button
+											key={card.title}
+											onClick={card.onClick}
+											className={`relative w-full rounded-[24px] bg-white p-6 text-left shadow-[0_2px_15px_rgba(0,0,0,0.03)] border transition-all duration-300 overflow-hidden ${isActive ? `ring-2 ring-offset-2 ${colors.ring} border-transparent` : 'border-slate-100 hover:-translate-y-1 hover:shadow-lg group'}`}
+										>
+											{/* Decorative Circle */}
+											<div className={`absolute -right-6 -top-6 h-24 w-24 rounded-full ${isActive ? colors.bg : colors.light} opacity-50 transition-transform duration-500 group-hover:scale-125`} />
+
+											{/* Icon */}
+											<div className={`relative mb-6 flex h-12 w-12 items-center justify-center rounded-2xl text-white shadow-md ${colors.icon}`}>
 												{card.icon}
 											</div>
-										</div>
-										<div className="absolute inset-x-3 bottom-3 h-1 rounded-full bg-gradient-to-r from-blue-100 to-transparent opacity-0 group-hover:opacity-100 transition" />
-									</button>
-								))}
+
+											{/* Content */}
+											<div className="relative">
+												<p className="text-3xl font-bold text-slate-800 tracking-tight">{card.value}</p>
+												<p className="mt-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">{card.title}</p>
+											</div>
+										</button>
+									);
+								})}
 							</div>
 						</div>
 					</section>
 
 					<section className="pt-2">
-						<div className="bg-white rounded-2xl border-2 border-indigo-100 ring-1 ring-indigo-50 shadow-sm p-6 space-y-6">
-							<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-								<div className="relative">
-									<Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
-									<input
-										type="text"
-										value={searchTerm}
-										onChange={(e) => setSearchTerm(e.target.value)}
-										placeholder="Search by title, description, owner..."
-										className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-12 pr-4 py-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:bg-white"
-									/>
-								</div>
+						<div className="bg-white/80 backdrop-blur-md border border-white/60 shadow-lg shadow-slate-200/40 rounded-3xl p-6 relative overflow-visible z-20">
+							<div className="flex flex-col gap-4">
 
-								<div className="flex flex-wrap gap-2 md:col-span-2">
-									{statusOptions.map((option) => (
+								{/* Top Bar: Search + Dropdowns */}
+								<div className="flex flex-col md:flex-row gap-4">
+									{/* Search - Grows to fill space */}
+									<div className="relative flex-1 group">
+										<Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 group-focus-within:text-blue-600 transition-colors" />
+										<input
+											type="text"
+											value={searchTerm}
+											onChange={(e) => setSearchTerm(e.target.value)}
+											placeholder="Search tickets..."
+											className="w-full rounded-2xl border border-slate-200 bg-white/50 pl-12 pr-4 py-3.5 text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 focus:bg-white transition-all shadow-sm"
+										/>
+									</div>
+
+									{/* Priority Dropdown */}
+									<div className="relative">
 										<button
-											key={option}
-											onClick={() => setStatusFilter(option)}
-											className={`px-4 py-2 rounded-full text-sm font-medium border transition ${
-												statusFilter === option
-													? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-													: 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
-											}`}
+											onClick={() => {
+												setShowPriorityDropdown(!showPriorityDropdown);
+												setShowCategoryDropdown(false);
+											}}
+											className={`h-full px-5 py-3.5 rounded-2xl border flex items-center gap-3 transition-all duration-200 ${priorityFilter !== 'all' || showPriorityDropdown
+												? 'bg-slate-800 text-white border-slate-800 shadow-md'
+												: 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+												}`}
 										>
-											{option === 'all' ? 'All Status' : option}
+											<span className="text-sm font-semibold">Priority</span>
+											<ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showPriorityDropdown ? 'rotate-180' : ''}`} />
 										</button>
-									))}
-								</div>
-							</div>
 
-							<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-								<div className="flex flex-wrap gap-2 md:col-span-2">
-									{priorityOptions.map((option) => (
+										{/* Dropdown Menu */}
+										{showPriorityDropdown && (
+											<div className="absolute top-full right-0 mt-2 w-56 p-2 bg-white rounded-2xl border border-slate-100 shadow-xl shadow-slate-200/50 z-50 animate-in fade-in zoom-in-95 duration-200">
+												<p className="px-3 py-2 text-[10px] uppercase font-bold text-slate-400">Select Priority</p>
+												{priorityOptions.map((option) => (
+													<button
+														key={option}
+														onClick={() => {
+															setPriorityFilter(option);
+															setShowPriorityDropdown(false);
+														}}
+														className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${priorityFilter === option
+															? 'bg-emerald-50 text-emerald-700'
+															: 'text-slate-600 hover:bg-slate-50'
+															}`}
+													>
+														{option === 'all' ? 'All Priorities' : option}
+														{priorityFilter === option && <div className="w-2 h-2 rounded-full bg-emerald-500"></div>}
+													</button>
+												))}
+											</div>
+										)}
+									</div>
+
+									{/* Category Dropdown */}
+									<div className="relative">
 										<button
-											key={option}
-											onClick={() => setPriorityFilter(option)}
-											className={`px-4 py-2 rounded-full text-sm font-medium border transition ${
-												priorityFilter === option
-													? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
-													: 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
-											}`}
+											onClick={() => {
+												setShowCategoryDropdown(!showCategoryDropdown);
+												setShowPriorityDropdown(false);
+											}}
+											className={`h-full px-5 py-3.5 rounded-2xl border flex items-center gap-3 transition-all duration-200 ${categoryFilter !== 'all' || showCategoryDropdown
+												? 'bg-slate-800 text-white border-slate-800 shadow-md'
+												: 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+												}`}
 										>
-											{option === 'all' ? 'All Priorities' : option}
+											<span className="text-sm font-semibold">Category</span>
+											<ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showCategoryDropdown ? 'rotate-180' : ''}`} />
 										</button>
-									))}
+
+										{/* Dropdown Menu */}
+										{showCategoryDropdown && (
+											<div className="absolute top-full right-0 mt-2 w-64 p-2 bg-white rounded-2xl border border-slate-100 shadow-xl shadow-slate-200/50 z-50 animate-in fade-in zoom-in-95 duration-200 max-h-80 overflow-y-auto">
+												<p className="px-3 py-2 text-[10px] uppercase font-bold text-slate-400">Select Category</p>
+												<button
+													onClick={() => {
+														setCategoryFilter('all');
+														setShowCategoryDropdown(false);
+													}}
+													className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${categoryFilter === 'all'
+														? 'bg-blue-50 text-blue-700'
+														: 'text-slate-600 hover:bg-slate-50'
+														}`}
+												>
+													All Categories
+													{categoryFilter === 'all' && <div className="w-2 h-2 rounded-full bg-blue-500"></div>}
+												</button>
+												{TICKET_CATEGORIES.map((category) => (
+													<button
+														key={category}
+														onClick={() => {
+															setCategoryFilter(category);
+															setShowCategoryDropdown(false);
+														}}
+														className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${categoryFilter === category
+															? 'bg-blue-50 text-blue-700'
+															: 'text-slate-600 hover:bg-slate-50'
+															}`}
+													>
+														{category}
+														{categoryFilter === category && <div className="w-2 h-2 rounded-full bg-blue-500"></div>}
+													</button>
+												))}
+											</div>
+										)}
+									</div>
 								</div>
 
-								<div className="flex gap-2 flex-wrap">
-									<button
-										onClick={() => setCategoryFilter('all')}
-										className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition ${
-											categoryFilter === 'all'
-												? 'bg-slate-900 text-white border-slate-900'
-												: 'bg-white border-slate-200 text-slate-600'
-										}`}
-									>
-										All Categories
-									</button>
-									{TICKET_CATEGORIES.map((category) => (
+								{/* Active Filters Row */}
+								<div className="flex items-center justify-between pt-2">
+									<div className="flex flex-wrap items-center gap-3">
+										<span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Active:</span>
+										{activeFilters.length === 0 && <span className="text-xs text-slate-400 italic">No filters applied</span>}
+										{activeFilters.map((filter) => (
+											<span
+												key={filter.label}
+												className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold border bg-white shadow-sm ${filterToneClasses[filter.tone]} animate-in fade-in zoom-in duration-300`}
+											>
+												{filter.label}
+											</span>
+										))}
+									</div>
+
+									{activeFilters.length > 0 && (
 										<button
-											key={category}
-											onClick={() => setCategoryFilter(category)}
-											className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition ${
-												categoryFilter === category
-													? 'bg-slate-900 text-white border-slate-900'
-													: 'bg-white border-slate-200 text-slate-600'
-											}`}
+											onClick={() => {
+												setStatusFilter('all');
+												setPriorityFilter('all');
+												setCategoryFilter('all');
+												setSearchTerm('');
+											}}
+											className="text-xs font-bold text-red-500 hover:text-red-600 hover:underline transition-all"
 										>
-											{category}
+											Clear All
 										</button>
-									))}
+									)}
 								</div>
-							</div>
-
-							<div className="flex flex-wrap items-center justify-between gap-3">
-								<div className="flex flex-wrap gap-2">
-									{activeFilters.length === 0 && <span className="text-sm text-slate-500">No active filters</span>}
-									{activeFilters.map((filter) => (
-										<span
-											key={filter.label}
-											className={`px-3 py-1 rounded-full text-xs font-semibold border ${filterToneClasses[filter.tone]}`}
-										>
-											{filter.label}
-										</span>
-									))}
-								</div>
-								<button
-									onClick={() => {
-										setStatusFilter('all');
-										setPriorityFilter('all');
-										setCategoryFilter('all');
-										setSearchTerm('');
-									}}
-									className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-slate-200 text-sm text-slate-600 hover:bg-slate-50"
-								>
-									<Filter className="w-4 h-4" />
-									Clear Filters
-								</button>
 							</div>
 						</div>
 					</section>
 
-					<section className="pt-10 space-y-6">
-					<div className="space-y-4 md:hidden">
-						{filteredTickets.map((ticket) => (
-							<div key={ticket.id} className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-								<div className="flex flex-wrap items-start gap-3">
-									<div className="flex-1">
-										<p className="text-sm uppercase tracking-wide text-slate-400">{ticket.department}</p>
-										<h3 className="text-lg font-semibold text-slate-900">{ticket.title}</h3>
-										<p className="text-sm text-slate-500 mt-1">{ticket.description}</p>
+					<section className="pt-2 space-y-2">
+						<div className="space-y-4 md:hidden">
+							{filteredTickets.map((ticket) => (
+								<div
+									key={ticket.id}
+									className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm active:scale-[0.98] transition-transform"
+									onClick={() => handleViewTicket(ticket)}
+								>
+									<div className="flex flex-wrap items-start gap-3">
+										<div className="flex-1">
+											{/* <p className="text-sm uppercase tracking-wide text-slate-400">{ticket.department}</p> */}
+											<h3 className="text-lg font-bold text-slate-900">{ticket.title}</h3>
+											<p className="text-sm text-slate-500 mt-1 line-clamp-2">{ticket.description}</p>
+										</div>
+										<span className={`px-3 py-1 rounded-full border text-xs font-semibold ${getPriorityColor(ticket.priority)}`}>
+											{ticket.priority}
+										</span>
 									</div>
-									<span className={`px-3 py-1 rounded-full border text-xs font-semibold ${getPriorityColor(ticket.priority)}`}>
-										{ticket.priority}
-									</span>
-								</div>
 
-								<div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
-									<span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-blue-700">
-										<Tag className="h-3.5 w-3.5" />
-										{ticket.category}
-									</span>
-									<span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-slate-600">
-										<User className="h-3.5 w-3.5" />
-										{ticket.assignedTo || 'Unassigned'}
-									</span>
-									<span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 ${getStatusColor(ticket.status)} border border-slate-100`}>
-										<span className={`h-2 w-2 rounded-full ${getStatusDotColor(ticket.status)}`} />
-										{ticket.status}
-									</span>
-								</div>
+									<div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
+										<span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-blue-700 border border-blue-100">
+											<Tag className="h-3.5 w-3.5" />
+											{ticket.category}
+										</span>
 
-								<div className="mt-4 flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
-									<div>
-										<p className="text-xs uppercase tracking-wide text-slate-400">Created</p>
-										<p className="text-sm font-semibold text-slate-900">{getTimeAgo(ticket.createdAt)}</p>
-										<p className="text-xs text-slate-400">{formatDate(ticket.createdAt)}</p>
+										{/* Assigned To Department Badge */}
+										<span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 font-medium border border-indigo-100">
+											{ticket.department || 'Unassigned'}
+										</span>
+
+										<span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 ${getStatusColor(ticket.status)} border border-slate-100`}>
+											{ticket.status}
+										</span>
 									</div>
-									<div className="flex flex-wrap items-center gap-2">
-										<button
-											onClick={() => handleViewTicket(ticket)}
-											className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-4 py-2 text-sm font-medium text-blue-600"
-										>
-											<Eye className="h-4 w-4" />
-											View
-										</button>
-										<button
-											onClick={() => handleSlip(ticket)}
-											className="inline-flex items-center justify-center rounded-full border border-slate-200 p-2 text-slate-500 hover:text-blue-600 hover:border-blue-300"
-											title="Service call slip"
-										>
-											<FileText className="h-4 w-4" />
-											<span className="sr-only">Service call slip</span>
-										</button>
+
+									<div className="mt-4 flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+										<div className="flex items-center gap-2 text-xs text-slate-400">
+											<Clock className="w-3.5 h-3.5" />
+											<span>{formatDate(ticket.createdAt)}</span>
+										</div>
+										<div className="flex flex-wrap items-center gap-2 ml-auto">
+											<button
+												onClick={(e) => {
+													e.stopPropagation();
+													handleSlip(ticket);
+												}}
+												className="inline-flex items-center justify-center rounded-full border border-slate-200 p-2 text-slate-500 hover:text-blue-600 hover:border-blue-300 bg-white"
+												title="Service call slip"
+											>
+												<FileText className="h-4 w-4" />
+												<span className="sr-only">Service call slip</span>
+											</button>
+										</div>
 									</div>
 								</div>
-							</div>
-						))}
-						{filteredTickets.length === 0 && (
-							<div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center text-slate-500">
-								No tickets match the current filters.
-							</div>
-						)}
-					</div>
+							))}
+							{filteredTickets.length === 0 && (
+								<div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center text-slate-500">
+									No tickets match the current filters.
+								</div>
+							)}
+						</div>
 
 						<div className="hidden md:block">
 							<div className="bg-white rounded-2xl border-2 border-slate-200 ring-1 ring-slate-100 shadow-sm overflow-x-auto">
-							<table className="w-full table-auto">
-								<thead>
-									<tr className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider bg-slate-50">
-										<th className="px-6 py-4">Ticket</th>
-										<th className="px-6 py-4">Category</th>
-										<th className="px-6 py-4">Priority</th>
-										<th className="px-6 py-4">Status</th>
-										<th className="px-6 py-4">Assigned To</th>
-										<th className="px-6 py-4">Created</th>
-										<th className="px-6 py-4 text-right">Actions</th>
-									</tr>
-								</thead>
-								<tbody className="divide-y divide-slate-100">
-									{filteredTickets.map((ticket) => (
-										<tr key={ticket.id} className="hover:bg-slate-50/60 transition">
-											<td className="px-6 py-4 align-top">
-												<p className="font-semibold text-slate-900">{ticket.title}</p>
-												<p className="text-sm text-slate-500 mt-1 line-clamp-2">{ticket.description}</p>
-												<div className="flex items-center gap-2 text-xs text-slate-400 mt-2">
-													<User className="w-4 h-4" />
-												
-													<span className="text-slate-300">•</span>
-													<span>{ticket.department}</span>
-												</div>
-											</td>
-											<td className="px-6 py-4 align-top">
-												<span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold">{ticket.category}</span>
-											</td>
-											<td className="px-6 py-4 align-top">
-												<span className={`px-3 py-1 rounded-full border text-xs font-semibold ${getPriorityColor(ticket.priority)}`}>
-													{ticket.priority}
-												</span>
-											</td>
-											<td className="px-6 py-4 align-top">
-												<div className="flex items-center gap-2">
-													<span className={`w-2 h-2 rounded-full ${getStatusDotColor(ticket.status)}`} />
+								<table className="w-full table-auto">
+									<thead>
+										<tr className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider bg-slate-50">
+											<th className="px-6 py-4">Ticket</th>
+											<th className="px-6 py-4 text-center">Category</th>
+											<th className="px-6 py-4 text-center">Priority</th>
+											<th className="px-6 py-4 text-center">Status</th>
+											<th className="px-6 py-4 text-center">Assigned To</th>
+											<th className="px-6 py-4 text-right">Actions</th>
+										</tr>
+									</thead>
+									<tbody className="divide-y divide-slate-100">
+										{filteredTickets.map((ticket) => (
+											<tr
+												key={ticket.id}
+												className="hover:bg-slate-50/60 transition cursor-pointer"
+												onClick={() => handleViewTicket(ticket)}
+											>
+												<td className="px-6 py-4 align-top">
+													<div className="max-w-md">
+														<h4 className="text-base font-bold text-slate-900 mb-1.5">{ticket.title}</h4>
+														<p className="text-sm text-slate-600 line-clamp-2 leading-relaxed">{ticket.description}</p>
+													</div>
+												</td>
+												<td className="px-6 py-4 align-top text-center">
+													<span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold">{ticket.category}</span>
+												</td>
+												<td className="px-6 py-4 align-top text-center">
+													<span className={`px-3 py-1 rounded-full text-xs font-semibold ${['critical', 'high'].includes((ticket.priority || '').toLowerCase())
+														? 'bg-red-50 text-red-700 border border-red-200'
+														: (ticket.priority || '').toLowerCase() === 'medium'
+															? 'bg-yellow-50 text-yellow-700 border border-yellow-200'
+															: 'bg-green-50 text-green-700 border border-green-200'
+														}`}>
+														{ticket.priority}
+													</span>
+												</td>
+												<td className="px-6 py-4 align-top text-center">
 													<span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(ticket.status)}`}>
 														{ticket.status}
 													</span>
-												</div>
-											</td>
-											<td className="px-6 py-4 align-top">
-												{ticket.assignedTo ? (
-													<div className="flex items-center gap-3">
-														<div className="w-9 h-9 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center font-semibold">
-															{ticket.assignedTo
-																.split(' ')
-																.map((part) => part.charAt(0))
-																.join('')
-																.slice(0, 2)}
-														</div>
-														<div>
-															<p className="text-sm font-semibold text-slate-900">{ticket.assignedTo}</p>
-															<p className="text-xs text-slate-400">Owner</p>
-														</div>
+												</td>
+												<td className="px-6 py-4 align-top text-center">
+													<span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 text-sm font-medium border border-indigo-100 ring-1 ring-indigo-50/50">
+														{ticket.department || 'Unassigned'}
+													</span>
+												</td>
+												<td className="px-6 py-4 align-top text-right" onClick={(e) => e.stopPropagation()}>
+													<div className="flex justify-end gap-3">
+														<button
+															onClick={() => handleSlip(ticket)}
+															className="inline-flex items-center justify-center rounded-full border border-slate-200 p-2 text-slate-500 hover:text-blue-600 hover:border-blue-300"
+															title="Service call slip"
+														>
+															<FileText className="w-4 h-4" />
+															<span className="sr-only">Service call slip</span>
+														</button>
 													</div>
-												) : (
-													<span className="text-slate-400 text-sm">Unassigned</span>
-												)}
-											</td>
-											<td className="px-6 py-4 align-top">
-												<p className="text-sm font-semibold text-slate-900">{getTimeAgo(ticket.createdAt)}</p>
-												<p className="text-xs text-slate-400">{formatDate(ticket.createdAt)}</p>
-											</td>
-											<td className="px-6 py-4 align-top text-right">
-												<div className="flex justify-end gap-3">
-													<button
-														onClick={() => handleViewTicket(ticket)}
-														className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100"
-													>
-														<Eye className="w-4 h-4" />
-														View
-													</button>
-													<button
-														onClick={() => handleSlip(ticket)}
-														className="inline-flex items-center justify-center rounded-full border border-slate-200 p-2 text-slate-500 hover:text-blue-600 hover:border-blue-300"
-														title="Service call slip"
-													>
-														<FileText className="w-4 h-4" />
-														<span className="sr-only">Service call slip</span>
-													</button>
-												</div>
-											</td>
-										</tr>
-									))}
-									{filteredTickets.length === 0 && (
-										<tr>
-											<td colSpan={7} className="px-6 py-16 text-center text-slate-500">
-												No tickets match the current filters.
-											</td>
-										</tr>
-									)}
-								</tbody>
-							</table>
+												</td>
+											</tr>
+										))}
+										{filteredTickets.length === 0 && (
+											<tr>
+												<td colSpan={7} className="px-6 py-16 text-center text-slate-500">
+													No tickets match the current filters.
+												</td>
+											</tr>
+										)}
+									</tbody>
+								</table>
+							</div>
 						</div>
-					</div>
-				</section>
+					</section>
 				</div>
 
 				{showAddModal && (
@@ -622,19 +701,18 @@ const handleSlip = (ticket: Ticket) => {
 						onClose={() => handleViewTicket(null)}
 						ticket={selectedTicket}
 						onUpdate={handleUpdateTicket}
-						equipments={[]}
 					/>
 				)}
 				{showSlip && selectedTicket && (
-        <ServiceSlip
-          ticket={selectedTicket}
-          onClose={() => setShowSlip(false)}
-          onAccept={handleUpdateTicket}
-          onDecline={handleUpdateTicket}
-        />
-      )}
+					<ServiceSlip
+						ticket={selectedTicket}
+						onClose={() => setShowSlip(false)}
+						onAccept={handleUpdateTicket}
+						onDecline={handleUpdateTicket}
+					/>
+				)}
 			</div>
-		</div> 
+		</div>
 	);
 };
 

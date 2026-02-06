@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Ticket, Equipment } from '../types';
-import { X, AlertTriangle, User, Tag, Bed } from 'lucide-react';
 import { axiosClient } from '../api/axiosClient';
+import GlassSelect from './GlassSelect';
 
 interface AddTicketModalProps {
   isOpen: boolean;
@@ -23,12 +23,12 @@ const AddTicketModal: React.FC<AddTicketModalProps> = ({
     category: 'Other',
     priority: 'Medium',
     status: 'Open',
-  //  createdBy: '',
+    //  createdBy: '',
     department: '',
     floor: '',
     room: '',
     Bed: '',
-   // equipmentId: '',
+    // equipmentId: '',
     //assignedTo: ''
   });
 
@@ -49,8 +49,8 @@ const AddTicketModal: React.FC<AddTicketModalProps> = ({
   ];
 
   const priorities: Ticket['priority'][] = ['Low', 'Medium', 'High', 'Critical'];
-    const floor: Ticket['Floor'][] = ['L0', 'L1', 'L2', 'L3', 'L4', 'L5'];
-     const room: Ticket['Room'][] = ['101', '110', '205', '300', '410', '512'];
+  const floor: string[] = ['L0', 'L1', 'L2', 'L3', 'L4', 'L5'];
+  const room: string[] = ['101', '110', '205', '300', '410', '512'];
   const departments = [
     'Emergency Department',
     'Intensive Care Unit',
@@ -82,7 +82,7 @@ const AddTicketModal: React.FC<AddTicketModalProps> = ({
 
     if (!formData.title.trim()) newErrors.title = 'Title is required';
     if (!formData.description.trim()) newErrors.description = 'Description is required';
-  
+
     if (!formData.department) newErrors.department = 'Department is required';
 
     setErrors(newErrors);
@@ -110,8 +110,8 @@ const AddTicketModal: React.FC<AddTicketModalProps> = ({
         category: formData.category,
         priority: mappedPriority === 'critical' ? 'high' : mappedPriority,
         department: formData.department,
-      //  equipmentId: formData.equipmentId || null,
-      //  assignedTo: formData.assignedTo || null,
+        //  equipmentId: formData.equipmentId || null,
+        //  assignedTo: formData.assignedTo || null,
         Floor: formData.floor || null,
         Room: formData.room || null,
         Bed: formData.Bed || null,
@@ -126,15 +126,15 @@ const AddTicketModal: React.FC<AddTicketModalProps> = ({
       // onClose();
 
       if (typeof onSubmit === "function") {
-  await onSubmit(response.data.ticket);
-}else{
-  console.error("onSubmit is not a function");
-}
-onClose();
+        await onSubmit(response.data.ticket);
+      } else {
+        console.error("onSubmit is not a function");
+      }
+      onClose();
 
     } catch (error: any) {
       console.error("Create ticket failed", error);
-      
+
     }
   };
 
@@ -148,224 +148,173 @@ onClose();
 
   if (!isOpen) return null;
 
+  // Disable body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, []);
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        
-        {/* HEADER */}
-        <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-2xl font-bold text-gray-900">Raise New Ticket</h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-            <X className="w-6 h-6" />
-          </button>
+    <div
+      className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
+      onClick={onClose}
+    >
+      <div className="max-w-2xl w-full flex flex-col gap-4" onClick={(e) => e.stopPropagation()}>
+
+        {/* HEADER CARD */}
+        <div
+          className="bg-white/80 backdrop-blur-xl border border-white/50 shadow-2xl rounded-2xl p-6 animate-in zoom-in-95 duration-200"
+          style={{ fontFamily: 'Inter, ui-sans-serif, system-ui, -apple-system' }}
+        >
+          <h2 className="text-2xl font-bold text-slate-800">Raise New Ticket</h2>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6">
+        {/* FORM CARD */}
+        <div
+          className="bg-white/80 backdrop-blur-xl border border-white/50 shadow-2xl rounded-2xl max-h-[75vh] overflow-y-auto animate-in zoom-in-95 duration-200 custom-scrollbar"
+          style={{ fontFamily: 'Inter, ui-sans-serif, system-ui, -apple-system' }}
+        >
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <form onSubmit={handleSubmit} className="p-6">
 
-            {/* Title */}
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Ticket Title *</label>
-              <input
-                type="text"
-                value={formData.title}
-                onChange={(e) => handleChange('title', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg ${
-                  errors.title ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Brief description of the issue or request"
-              />
-              {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title}</p>}
-            </div>
+            <div className="space-y-6">
 
-            {/* Category */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">To Department *</label>
-              <div className="relative">
-                <Tag className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <select
-                  value={formData.category}
-                  onChange={(e) => handleChange('category', e.target.value)}
-                  className="pl-10 pr-4 py-2 border rounded-lg w-full"
-                >
-                  {categories.map(category => (
-                    <option key={category} value={category}>{category}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Priority */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Priority *</label>
-              <div className="relative">
-                <AlertTriangle className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <select
-                  value={formData.priority}
-                  onChange={(e) => handleChange('priority', e.target.value)}
-                  className="pl-10 pr-4 py-2 border rounded-lg w-full"
-                >
-                  {priorities.map(priority => (
-                    <option key={priority} value={priority}>{priority}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Reporter */}
-            {/* <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Reported By *</label>
-              <div className="relative">
-                <User className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              {/* Title */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Ticket Title *</label>
                 <input
                   type="text"
-                  value={formData.createdBy}
-                  onChange={(e) => handleChange('createdBy', e.target.value)}
-                  className={`pl-10 pr-4 py-2 border rounded-lg w-full ${
-                    errors.createdBy ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="Enter your name"
+                  value={formData.title}
+                  onChange={(e) => handleChange('title', e.target.value)}
+                  className={`w-full px-4 py-2.5 bg-white/60 backdrop-blur-sm border rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:bg-white/80 ${errors.title ? 'border-red-400 bg-red-50/50' : 'border-slate-300/60'
+                    }`}
+                  placeholder="Brief description of the issue or request"
                 />
+                {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title}</p>}
               </div>
-              {errors.createdBy && <p className="text-red-500 text-sm mt-1">{errors.createdBy}</p>}
-            </div> */}
 
-            {/* Department */}
-            {/* <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Department *</label>
-              <select
-                value={formData.department}
-                onChange={(e) => handleChange('department', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg ${
-                  errors.department ? 'border-red-500' : 'border-gray-300'
-                }`}
-              >
-                <option value="">Select department</option>
-                {departments.map(dept => (
-                  <option key={dept} value={dept}>{dept}</option>
-                ))}
-              </select>
-            </div> */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Floor </label>
-              <div className="relative">
-                <Tag className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <select
-                  value={formData.floor}
-                  onChange={(e) => handleChange('floor', e.target.value)}
-                  className="pl-10 pr-4 py-2 border rounded-lg w-full"
-                >
-                  {floor.map(floor => (
-                    <option key={floor} value={floor}>{floor}</option>
-                  ))}
-                </select>
+              {/* Row 1: Department, Priority, Floor (3 columns) */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                {/* Category */}
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">To Department *</label>
+                  <GlassSelect
+                    value={formData.category}
+                    onChange={(val) => handleChange('category', String(val))}
+                    options={categories.map(cat => ({ label: cat, value: cat }))}
+                    placeholder="Select department"
+                  />
+                </div>
+
+                {/* Priority */}
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Priority *</label>
+                  <GlassSelect
+                    value={formData.priority}
+                    onChange={(val) => handleChange('priority', String(val))}
+                    options={priorities.map(p => ({ label: p, value: p }))}
+                    placeholder="Select priority"
+                    colorMap={{
+                      'Low': 'text-green-600',
+                      'Medium': 'text-yellow-600',
+                      'High': 'text-orange-600',
+                      'Critical': 'text-red-600'
+                    }}
+                  />
+                </div>
+
+                {/* Floor */}
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Floor </label>
+                  <GlassSelect
+                    value={formData.floor}
+                    onChange={(val) => handleChange('floor', String(val))}
+                    options={floor.map(f => ({ label: f, value: f }))}
+                    placeholder="Select floor"
+                  />
+                </div>
+
               </div>
-            </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Room </label>
-              <div className="relative">
-                <Tag className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <select
-                  value={formData.room}
-                  onChange={(e) => handleChange('room', e.target.value)}
-                  className="pl-10 pr-4 py-2 border rounded-lg w-full"
-                >
-                  {room.map(room => (
-                    <option key={room} value={room}>{room}</option>
-                  ))}
-                </select>
+              {/* Row 2: Room Number, Bed Number (3 columns - 1:2 ratio) */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                {/* Room */}
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Room </label>
+                  <GlassSelect
+                    value={formData.room}
+                    onChange={(val) => handleChange('room', String(val))}
+                    options={room.map(r => ({ label: r, value: r }))}
+                    placeholder="Select room"
+                  />
+                </div>
+
+                {/* Bed Number */}
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Bed Number</label>
+                  <input
+                    type="text"
+                    value={formData.Bed}
+                    onChange={(e) => handleChange('Bed', e.target.value)}
+                    className={`w-full px-4 py-2.5 bg-white/60 backdrop-blur-sm border rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:bg-white/80 ${errors.Bed ? 'border-red-400 bg-red-50/50' : 'border-slate-300/60'
+                      }`}
+                    placeholder="Enter bed number if applicable"
+                  />
+                  {errors.Bed && <p className="text-red-500 text-sm mt-1">{errors.Bed}</p>}
+                </div>
+
               </div>
+
+              {/* Description + Action Buttons Row (3 columns) */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                {/* Description */}
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Description *
+                  </label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => handleChange('description', e.target.value)}
+                    rows={4}
+                    className={`w-full px-4 py-2.5 bg-white/60 backdrop-blur-sm border rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:bg-white/80 resize-none ${errors.description ? 'border-red-400 bg-red-50/50' : 'border-slate-300/60'
+                      }`}
+                    placeholder="Provide detailed description..."
+                  />
+                </div>
+
+                {/* Action Buttons Column */}
+                <div className="flex flex-col gap-3">
+                  <label className="block text-sm font-semibold text-slate-700 mb-2 invisible">
+                    Actions
+                  </label>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="w-full px-6 py-2.5 border border-slate-300/60 text-slate-700 rounded-xl bg-white/60 backdrop-blur-sm hover:bg-white/80 transition-all duration-200 font-semibold"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="submit"
+                    className="w-full px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl shadow-lg hover:shadow-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-semibold"
+                  >
+                    Create Ticket
+                  </button>
+                </div>
+
+              </div>
+
             </div>
 
-             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Bed Number</label>
-              <input
-                type="text"
-                value={formData.Bed}
-                onChange={(e) => handleChange('Bed', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg ${
-                  errors.Bed ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Enter bed number if applicable"
-              />
-              {errors.Bed && <p className="text-red-500 text-sm mt-1">{errors.Bed}</p>}
-            </div>
+          </form>
+        </div>
 
-            {/* Equipment */}
-            {/* <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Related Equipment (Optional)
-              </label>
-              <select
-                value={formData.equipmentId}
-                onChange={(e) => handleChange('equipmentId', e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg"
-              >
-                <option value="">Select equipment</option>
-                {equipments.map(eq => (
-                  <option key={eq.id} value={eq.id}>
-                    {eq.name} - {eq.location}
-                  </option>
-                ))}
-              </select>
-            </div> */}
-
-            {/* Assigned To */}
-            {/* <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Assign To (Optional)
-              </label>
-              <select
-                value={formData.assignedTo}
-                onChange={(e) => handleChange('assignedTo', e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg"
-              >
-                <option value="">Select assignee</option>
-                {assignees.map(a => (
-                  <option key={a} value={a}>{a}</option>
-                ))}
-              </select>
-            </div> */}
-
-            {/* Description */}
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description *
-              </label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => handleChange('description', e.target.value)}
-                rows={4}
-                className={`w-full px-3 py-2 border rounded-lg ${
-                  errors.description ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Provide detailed description..."
-              />
-            </div>
-          </div>
-
-          {/* ACTION BUTTONS */}
-          <div className="flex justify-end gap-4 mt-8 pt-6 border-t">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-6 py-2 border rounded-lg"
-            >
-              Cancel
-            </button>
-
-            <button
-              type="submit"
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg
-                         hover:bg-blue-700 transition-colors"
-            >
-              Create Ticket
-            </button>
-          </div>
-
-        </form>
       </div>
     </div>
   );

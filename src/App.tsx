@@ -1,13 +1,12 @@
 
-import { useState } from "react";
 import {
   Routes,
   Route,
   Navigate,
-  useNavigate,
-
   Outlet,
 } from "react-router-dom";
+import { useAuth } from "./hooks/useAuth";
+import { axiosClient } from "./api/axiosClient";
 
 import LoginPage from "./components/LoginPage";
 import Sidebar from "./components/Sidebar";
@@ -22,8 +21,7 @@ import SelectUnitPage from "./components/SelectUnitPage";
 
 import Register from "./components/Register";
 import EquipmentPage from "./components/EquipmentPage";
-import Reviewticket from "./components/Reviewticket";
-import ReviewList from "./components/Reviewlist";
+
 import MyTickets from "./components/MyTickets";
 
 
@@ -40,35 +38,29 @@ function ProtectedRoute({
 }
 
 /* -------------------------------- UNIT LAYOUT --------------------------- */
-function UnitLayout({ onLogout }: { onLogout: () => void }) {
+function UnitLayout({ onLogout, user }: { onLogout: () => void; user: any }) {
 
 
   return (
-    <div className="flex">
-      <Sidebar  onLogout={onLogout} />
-      <div className="flex-1 ml-[300px]">
+    <>
+      <Sidebar onLogout={onLogout} user={user} />
+      <div className="ml-[280px] w-[calc(100%-280px)]">
         <Outlet />
       </div>
-    </div>
+    </>
   );
 }
 
 /* -------------------------------- MAIN APP --------------------------- */
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loggedUser, setLoggedUser] = useState<any>(null);
-
-
-
-  const navigate = useNavigate();
+  const { user: loggedUser, loading } = useAuth();
+  const isAuthenticated = !!loggedUser;
 
   /* ------------------------------ LOGIN ------------------------------ */
   const handleLogin = (user: any) => {
-    setIsAuthenticated(true);
-    setLoggedUser(user);
-
+    // Cookie is already set by backend, just navigate and reload
     if (user.role === "admin") {
-      navigate("/select-unit");
+      window.location.href = "/select-unit";
       return;
     }
 
@@ -77,45 +69,60 @@ function App() {
       return;
     }
 
-    navigate(`/unit/${user.unitId}/tickets`);
+    window.location.href = `/unit/${user.unitId}/tickets`;
   };
 
   /* ------------------------------ LOGOUT ------------------------------ */
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    setLoggedUser(null);
-    navigate("/");
+  const handleLogout = async () => {
+    try {
+      await axiosClient.post("/auth/logout");
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+    window.location.href = "/";
   };
 
 
+
+  // Show loading state while checking authentication
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+          <p className="text-lg text-slate-700 font-medium">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex">
       <Routes>
-  {/* LOGIN */}
-  <Route path="/" element={<LoginPage onLogin={handleLogin} />} />
-  <Route path="/register" element={<Register />} />
+        {/* LOGIN */}
+        <Route path="/" element={<LoginPage onLogin={handleLogin} />} />
+        <Route path="/register" element={<Register />} />
 
-  {/* SELECT UNIT */}
-  <Route
-    path="/select-unit"
-    element={
-      <ProtectedRoute isAuthed={isAuthenticated}>
-        <SelectUnitPage />
-      </ProtectedRoute>
-    }
-  />
+        {/* SELECT UNIT */}
+        <Route
+          path="/select-unit"
+          element={
+            <ProtectedRoute isAuthed={isAuthenticated}>
+              <SelectUnitPage />
+            </ProtectedRoute>
+          }
+        />
 
-  {/* UNIT ROUTES */}
-  <Route
-    path="/unit/:unitId"
-    element={
-      <ProtectedRoute isAuthed={isAuthenticated}>
-        <UnitLayout onLogout={handleLogout} />
-      </ProtectedRoute>
-    }
-  >
-    {/* <Route
+        {/* UNIT ROUTES */}
+        <Route
+          path="/unit/:unitId"
+          element={
+            <ProtectedRoute isAuthed={isAuthenticated}>
+              <UnitLayout onLogout={handleLogout} user={loggedUser} />
+            </ProtectedRoute>
+          }
+        >
+          {/* <Route
       path="dashboard"
       element={
         <Dashboard
@@ -125,38 +132,38 @@ function App() {
       }
     /> */}
 
-    {/* ✅ ADMIN ONLY */}
-    <Route
-      path="equipments"
-      element={
-       <EquipmentPage />
-      }
-    />
+          {/* ✅ ADMIN ONLY */}
+          <Route
+            path="equipments"
+            element={
+              <EquipmentPage />
+            }
+          />
 
-    <Route
-      path="tickets"
-      element={<TicketManagement />}
-    />
-    
-    <Route
-      path="review"
-      element={<MyTickets />}
-    />
-{/* 
+          <Route
+            path="tickets"
+            element={<TicketManagement />}
+          />
+
+          <Route
+            path="review"
+            element={<MyTickets />}
+          />
+          {/* 
     <Route
       path="my-tickets"
       element={<MyTickets />}
     /> */}
 
-    <Route path="settings" element={<Settings />} />
-    
-  </Route>
+          <Route path="settings" element={<Settings />} />
 
-  {/* FALLBACK */}
-  <Route path="*" element={<Navigate to="/" replace />} />
-</Routes>
+        </Route>
 
-      
+        {/* FALLBACK */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+
+
     </div>
   );
 }

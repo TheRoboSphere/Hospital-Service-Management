@@ -58,13 +58,15 @@ export interface Ticket {
   description: string;
   category: string;
   priority: 'Low' | 'Medium' | 'High' | 'Critical';
-  status: 'Open' | 'In Progress' | 'Pending' | 'Resolved' | 'Closed' ;
-  Floor ?: string;
-  unitId ?: number;
-  Room ?: string;
-  Bed ?: string;
+  status: 'Open' | 'In Progress' | 'Pending' | 'Resolved' | 'Closed' | 'Approved' | 'Rejected';
+  Floor?: string;
+  unitId?: number;
+  Room?: string;
+  Bed?: string;
   assignedTo?: string;
   assignedToName?: string;
+  assignedToId?: number;
+  assignedToDepartment?: string;
   comment?: string;
   createdAt: string;
   updatedAt: string;
@@ -72,7 +74,7 @@ export interface Ticket {
   equipmentId?: string;
   department: string;
   attachments?: string[];
-  createdBy?: string; 
+  createdBy?: string;
   comments?: TicketComment[];
 }
 

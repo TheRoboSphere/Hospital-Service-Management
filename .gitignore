@@ -1,3 +1,5 @@
 node_modules
 .env
 dist
+DESIGN_SYSTEM_CASE_STUDY.md
+.vscode

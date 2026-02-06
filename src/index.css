@@ -1,3 +1,143 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ==================== Design System Tokens ==================== */
+
+/* Light Theme */
+:root {
+  --bg: #f6f9fb;
+  /* Page background */
+  --panel: #ffffff;
+  /* Panel/Card background */
+  --primary: #ff8a2b;
+  /* Primary accent (orange) */
+  --muted: #f0f4f8;
+  /* Muted background */
+  --muted-text: #6b7280;
+  /* Secondary text */
+  --accent: #2b6ffb;
+  /* Accent blue */
+  --text-color: #111827;
+  /* Primary text */
+
+  /* Status Colors */
+  --status-success: #10B981;
+  /* Green for approved/success */
+  --status-error: #EF4444;
+  /* Red for errors/high alerts */
+  --status-warning: #F59E0B;
+  /* Orange for pending/warnings */
+  --status-info: #3B82F6;
+  /* Blue for informational */
+}
+
+/* Dark Theme */
+[data-theme='dark'] {
+  --bg: #003366;
+  /* Dark blue background */
+  --panel: #002244;
+  /* Dark panel */
+  --primary: #FF4C39;
+  /* Red-orange primary */
+  --muted: #001122;
+  /* Darker muted */
+  --muted-text: #C1C1C1;
+  /* Light gray text */
+  --accent: #3B82F6;
+  /* Bright blue */
+  --text-color: #FFFFFF;
+  /* White text */
+}
+
+/* ==================== Global Styles ==================== */
+
+html,
+body,
+#root {
+  height: 100%;
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+}
+
+body {
+  background: var(--bg);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: var(--text-color);
+}
+
+/* Apply custom scrollbar to body */
+body::-webkit-scrollbar {
+  width: 8px;
+}
+
+body::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+body::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 6px;
+}
+
+body::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ==================== Custom Shadows ==================== */
+
+.shadow-glass {
+  box-shadow: 0 10px 30px rgba(14, 24, 40, 0.06);
+}
+
+/* ==================== Custom Scrollbar ==================== */
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.25) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.25);
+  border-radius: 9999px;
+}
+
+.dark .scrollbar-thin {
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+}
+
+
+.dark .scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Custom Glass Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 8px 0;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  /* slate-300 */
+  border-radius: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+  /* slate-400 */
+}

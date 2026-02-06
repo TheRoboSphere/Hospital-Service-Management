@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { Equipment } from '../types';
-import { X,  } from 'lucide-react';
+
 
 interface AddEquipmentModalProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ const ShowEquipmentModal: React.FC<AddEquipmentModalProps> = ({
   equipment
 }) => {
   const [formData, setFormData] = useState<Omit<Equipment, 'id'>>({
+    unitId: 0, // Changed to number
     name: '',
     category: '',
     serialNumber: '',
@@ -28,12 +30,11 @@ const ShowEquipmentModal: React.FC<AddEquipmentModalProps> = ({
     cost: 0
   });
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
   useEffect(() => {
     if (equipment) {
       setFormData({
         name: equipment.name,
+        unitId: equipment.unitId || 0, // Changed to number
         category: equipment.category,
         serialNumber: equipment.serialNumber,
         manufacturer: equipment.manufacturer,
@@ -49,6 +50,7 @@ const ShowEquipmentModal: React.FC<AddEquipmentModalProps> = ({
     } else {
       setFormData({
         name: '',
+        unitId: 0, // Changed to number
         category: '',
         serialNumber: '',
         manufacturer: '',
@@ -62,242 +64,183 @@ const ShowEquipmentModal: React.FC<AddEquipmentModalProps> = ({
         cost: 0
       });
     }
-    setErrors({});
   }, [equipment, isOpen]);
 
- const formatDate = (date: string | Date | null) => {
-  if (!date) return "-";
-  return new Date(date).toLocaleDateString("en-IN", {
-    year: "numeric",
-    month: "numeric",
-    day: "numeric",
-  });
-};
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
+  const formatDate = (date: string | Date | null) => {
+    if (!date) return "-";
+    return new Date(date).toLocaleDateString("en-IN", {
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+    });
+  };
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-2xl font-bold text-gray-900">
-            {equipment ? 'Equipment Details' : 'Add New Equipment'}
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <X className="w-6 h-6" />
-          </button>
+  return ReactDOM.createPortal(
+    <div
+      onClick={onClose}
+      className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-in fade-in duration-200"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto custom-scrollbar border border-white/50 animate-in zoom-in-95 duration-200"
+      >
+        <div className="flex items-center justify-between px-8 py-6 border-b border-gray-100 bg-white/50 sticky top-0 backdrop-blur-md z-10">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-800">
+              Equipment Details
+            </h2>
+          </div>
         </div>
 
-        <form  className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="px-8 py-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6">
             {/* Equipment Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Equipment Name 
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                Equipment Name
               </label>
-              <p className='w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'>{formData.name}</p>
-                {/* type="text"
-                value={formData.name}
-                onChange={(e) => handleChange('name', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.name ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Enter equipment name"
-              />
-              {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>} */}
+              <p className="text-slate-800 font-medium">
+                {formData.name}
+              </p>
             </div>
 
             {/* Category */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                 Category
               </label>
-              <p className='w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'>{formData.category}</p>
-              {/* <select
-                value={formData.category}
-                onChange={(e) => handleChange('category', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.category ? 'border-red-500' : 'border-gray-300'
-                }`}
-              >
-                <option value="">Select category</option>
-                {categories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select> */}
-              {errors.category && <p className="text-red-500 text-sm mt-1">{errors.category}</p>}
+              <p className="text-slate-800 font-medium">
+                {formData.category}
+              </p>
             </div>
 
             {/* Serial Number */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                 Serial Number
               </label>
-              <p className='w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'>{formData.serialNumber}</p>
-              {/* <input
-                type="text"
-                value={formData.serialNumber}
-                onChange={(e) => handleChange('serialNumber', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.serialNumber ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Enter serial number"
-              /> */}
-              {errors.serialNumber && <p className="text-red-500 text-sm mt-1">{errors.serialNumber}</p>}
+              <p className="text-slate-800 font-medium font-mono">
+                {formData.serialNumber}
+              </p>
             </div>
 
             {/* Manufacturer */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                 Manufacturer
               </label>
-              <p className='w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'>{formData.manufacturer}</p>
-              {/* <input
-                type="text"
-                value={formData.manufacturer}
-                onChange={(e) => handleChange('manufacturer', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.manufacturer ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Enter manufacturer"
-              /> */}
-              {errors.manufacturer && <p className="text-red-500 text-sm mt-1">{errors.manufacturer}</p>}
+              <p className="text-slate-800 font-medium">
+                {formData.manufacturer}
+              </p>
             </div>
 
             {/* Model */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                 Model
               </label>
-              <p className='w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'>{formData.model}</p>
-              {/* <input
-                type="text"
-                value={formData.model}
-                onChange={(e) => handleChange('model', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.model ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Enter model"
-              /> */}
-              {errors.model && <p className="text-red-500 text-sm mt-1">{errors.model}</p>}
+              <p className="text-slate-800 font-medium">
+                {formData.model}
+              </p>
             </div>
 
             {/* Location */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                 Location
               </label>
-              <p className='w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'>{formData.location}</p>
-              {/* <select
-                value={formData.location}
-                onChange={(e) => handleChange('location', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.location ? 'border-red-500' : 'border-gray-300'
-                }`}
-              >
-                <option value="">Select location</option>
-                {locations.map(loc => (
-                  <option key={loc} value={loc}>{loc}</option>
-                ))}
-              </select>
-              {errors.location && <p className="text-red-500 text-sm mt-1">{errors.location}</p>} */}
+              <div className="flex items-center gap-2 text-slate-800 font-medium">
+                <span className={`w-2 h-2 rounded-full ${formData.location.includes('Emergency') ? 'bg-red-500' :
+                  formData.location.includes('ICU') ? 'bg-blue-500' :
+                    formData.location.includes('Operating') ? 'bg-green-500' :
+                      'bg-purple-500'
+                  }`} />
+                {formData.location}
+              </div>
             </div>
 
             {/* Status */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                 Status
               </label>
-              <p className='w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'>{formData.status}</p>
-              {/* <select
-                value={formData.status}
-                onChange={(e) => handleChange('status', e.target.value as Equipment['status'])}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                {statuses.map(status => (
-                  <option key={status} value={status}>{status}</option>
-                ))}
-              </select> */}
+              <div className="flex items-center">
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${formData.status === 'Active' ? 'bg-green-100 text-green-700' :
+                  formData.status === 'Maintenance' ? 'bg-yellow-100 text-yellow-700' :
+                    formData.status === 'Out of Order' ? 'bg-red-100 text-red-700' :
+                      'bg-gray-100 text-gray-700'
+                  }`}>
+                  {formData.status}
+                </span>
+              </div>
             </div>
 
             {/* Cost */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                 Cost (₹)
               </label>
-              <p className='w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'>{formData.cost}</p>
-              {/* <input
-                type="number"
-                value={formData.cost}
-                onChange={(e) => handleChange('cost', parseFloat(e.target.value) || 0)}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.cost ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Enter cost"
-                min="0"
-                step="0.01"
-              />
-              {errors.cost && <p className="text-red-500 text-sm mt-1">{errors.cost}</p>} */}
+              <p className="text-slate-800 font-medium">
+                ₹{formData.cost.toLocaleString('en-IN')}
+              </p>
             </div>
 
             {/* Purchase Date */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                 Purchase Date
               </label>
-              <p className='w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'> {formatDate(formData.purchaseDate)}</p>
-              {/* <input
-                type="date"
-                value={formData.purchaseDate}
-                onChange={(e) => handleChange('purchaseDate', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.purchaseDate ? 'border-red-500' : 'border-gray-300'
-                }`}
-              />
-              {errors.purchaseDate && <p className="text-red-500 text-sm mt-1">{errors.purchaseDate}</p>} */}
+              <p className="text-slate-800 font-medium">
+                {formatDate(formData.purchaseDate)}
+              </p>
             </div>
 
             {/* Warranty Expiry */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                 Warranty Expiry
               </label>
-              <p className='w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'>{formatDate(formData.warrantyExpiry)}</p>
-              {/* <input
-                type="date"
-                value={formData.warrantyExpiry}
-                onChange={(e) => handleChange('warrantyExpiry', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              /> */}
+              <p className="text-slate-800 font-medium">
+                {formatDate(formData.warrantyExpiry)}
+              </p>
             </div>
 
             {/* Last Maintenance */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                 Last Maintenance
               </label>
-              <p className='w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'>{formatDate(formData.lastMaintenance)}</p>
-              {/* <input
-                type="date"
-                value={formData.lastMaintenance}
-                onChange={(e) => handleChange('lastMaintenance', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              /> */}
+              <p className="text-slate-800 font-medium">
+                {formatDate(formData.lastMaintenance)}
+              </p>
             </div>
 
             {/* Next Maintenance */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                 Next Maintenance
               </label>
-              <p className='w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500'>{formatDate(formData.nextMaintenance)}</p>
+              <p className="text-slate-800 font-medium">
+                {formatDate(formData.nextMaintenance)}
+              </p>
             </div>
           </div>
+        </div>
 
-          {/* <div className="flex justify-end gap-4 mt-8 pt-6 border-t">
+        {/* <div className="flex justify-end gap-4 mt-8 pt-6 border-t">
             <button
               type="button"
               onClick={onClose}
@@ -312,9 +255,9 @@ const ShowEquipmentModal: React.FC<AddEquipmentModalProps> = ({
               {equipment ? 'Update Equipment' : 'Add Equipment'}
             </button>
           </div> */}
-        </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
