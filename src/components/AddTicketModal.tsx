@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Ticket, Equipment } from '../types';
+import { Ticket } from '../types';
 import { axiosClient } from '../api/axiosClient';
 import GlassSelect from './GlassSelect';
 
@@ -7,14 +7,12 @@ interface AddTicketModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (ticket: Ticket) => void | Promise<void>;
-  equipments: Equipment[];
 }
 
 const AddTicketModal: React.FC<AddTicketModalProps> = ({
   isOpen,
   onClose,
-  onSubmit,
-  equipments
+  onSubmit
 }) => {
 
   const [formData, setFormData] = useState({
@@ -51,21 +49,7 @@ const AddTicketModal: React.FC<AddTicketModalProps> = ({
   const priorities: Ticket['priority'][] = ['Low', 'Medium', 'High', 'Critical'];
   const floor: string[] = ['L0', 'L1', 'L2', 'L3', 'L4', 'L5'];
   const room: string[] = ['101', '110', '205', '300', '410', '512'];
-  const departments = [
-    'Emergency Department',
-    'Intensive Care Unit',
-    'Radiology Department',
-    'Laboratory',
-    'Cardiology Department',
-    'OB/GYN Department',
-    'Operating Theater',
-    'Pharmacy',
-    'Physiotherapy',
-    'Administration',
-    'IT Department',
-    'Human Resources',
-    'Maintenance'
-  ];
+
 
   // const assignees = [
   //   'Dr. Priya Sharma',
@@ -107,14 +91,14 @@ const AddTicketModal: React.FC<AddTicketModalProps> = ({
       const payload = {
         title: formData.title,
         description: formData.description,
-        category: formData.category,
+        category: formData.department, // Backend expects both category and department
         priority: mappedPriority === 'critical' ? 'high' : mappedPriority,
         department: formData.department,
         //  equipmentId: formData.equipmentId || null,
         //  assignedTo: formData.assignedTo || null,
-        Floor: formData.floor || null,
-        Room: formData.room || null,
-        Bed: formData.Bed || null,
+        floor: formData.floor || null,
+        room: formData.room || null,
+        bed: formData.Bed || null,
         unitId,
       };
 
@@ -198,12 +182,12 @@ const AddTicketModal: React.FC<AddTicketModalProps> = ({
               {/* Row 1: Department, Priority, Floor (3 columns) */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-                {/* Category */}
+                {/* Department */}
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">To Department *</label>
                   <GlassSelect
-                    value={formData.category}
-                    onChange={(val) => handleChange('category', String(val))}
+                    value={formData.department}
+                    onChange={(val) => handleChange('department', String(val))}
                     options={categories.map(cat => ({ label: cat, value: cat }))}
                     placeholder="Select department"
                   />
