@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import {
   Users,
@@ -5,13 +6,17 @@ import {
   Layers,
   Clock,
   CheckCircle,
-  User,
+  User as UserIcon,
   Edit,
-  ArrowRight
+  ArrowRight,
+  X,
+  Filter
 } from "lucide-react";
-import { Ticket } from "../types";
+import { Ticket, User } from "../types";
 import { axiosClient } from "../api/axiosClient";
 import { useAuth } from "../hooks/useAuth";
+import CustomSelect from "./CustomSelect";
+import CustomDatePicker from "./CustomDatePicker";
 
 interface ExtendedTicket extends Ticket {
   assignedToName?: string;
@@ -22,9 +27,13 @@ const MyTickets = () => {
   const { user } = useAuth();
   const [tickets, setTickets] = useState<ExtendedTicket[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTicket, setSelectedTicket] = useState<ExtendedTicket | null>(null);
-  const [showModal, setShowModal] = useState(false);
+
+  const [expandedTicketId, setExpandedTicketId] = useState<string | null>(null);
   const [updateComment, setUpdateComment] = useState("");
+  const [assignableUsers, setAssignableUsers] = useState<Record<string, User[]>>({});
+  // Ticket-specific states to prevent cross-ticket contamination
+  const [selectedUserIds, setSelectedUserIds] = useState<Record<string, number | null>>({});
+  const [deadlines, setDeadlines] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!user) return;
@@ -47,6 +56,7 @@ const MyTickets = () => {
       else if (action === "update") endpoint = `/tickets/${id}/update`;
       else if (action === "close") endpoint = `/tickets/${id}/close`;
       else if (action === "verify") endpoint = `/tickets/${id}/verify`;
+      else if (action === "mark-done") endpoint = `/tickets/${id}/mark-done`;
 
       const method = action === "assign" ? "post" : "patch";
       await axiosClient[method](endpoint, data);
@@ -54,14 +64,35 @@ const MyTickets = () => {
       // Refresh tickets
       window.location.reload();
     } catch (error) {
+      console.error("Action failed:", error);
       alert("Action failed");
     }
   };
 
-  const openModal = (ticket: ExtendedTicket) => {
-    setSelectedTicket(ticket);
+  const toggleExpand = async (ticket: ExtendedTicket) => {
+    if (expandedTicketId === ticket.id) {
+      setExpandedTicketId(null);
+      return;
+    }
+
+    setExpandedTicketId(ticket.id);
     setUpdateComment(ticket.comment || "");
-    setShowModal(true);
+    // Reset ticket-specific states
+    setSelectedUserIds(prev => ({ ...prev, [ticket.id]: null }));
+    setDeadlines(prev => ({ ...prev, [ticket.id]: "" }));
+
+    // Fetch assignable users
+    try {
+      const uId = ticket.unitId || (ticket as any).unit_id;
+
+      const res = await axiosClient.get("/users/assignable", {
+        params: { unitId: uId }
+      });
+      setAssignableUsers(prev => ({ ...prev, [ticket.id]: res.data.users }));
+    } catch (error) {
+      console.error("Failed to fetch assignable users:", error);
+      setAssignableUsers(prev => ({ ...prev, [ticket.id]: [] }));
+    }
   };
 
 
@@ -94,8 +125,8 @@ const MyTickets = () => {
           {tickets.map(ticket => (
             <div
               key={ticket.id}
-              onClick={() => openModal(ticket)}
-              className="group relative bg-white/40 backdrop-blur-md border border-white/50 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:bg-white/60 hover:scale-[1.02] hover:-translate-y-1 transition-all duration-300 overflow-hidden cursor-pointer"
+              onClick={() => toggleExpand(ticket)}
+              className={`group relative bg-white/40 backdrop-blur-md border rounded-2xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer ${expandedTicketId === ticket.id ? 'border-blue-500/30 ring-2 ring-blue-500/10' : 'border-white/50 hover:bg-white/60 hover:scale-[1.02] hover:-translate-y-1'}`}
             >
               {/* CARD DECORATION */}
               <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-white/40 to-transparent rounded-bl-full pointer-events-none" />
@@ -147,7 +178,7 @@ const MyTickets = () => {
                   )
                 }
 
-                < div className="flex items-center text-sm text-slate-500" >
+                <div className="flex items-center text-sm text-slate-500">
                   <Layers size={16} className="mr-2.5 text-slate-400" />
                   <span className="font-medium text-slate-700">Cat:</span>
                   <span className="ml-1">{ticket.category}</span>
@@ -160,19 +191,136 @@ const MyTickets = () => {
 
                 {ticket.assignedToName && (
                   <div className="flex items-center text-sm text-slate-500">
-                    <User size={16} className="mr-2.5 text-slate-400" />
+                    <UserIcon size={16} className="mr-2.5 text-slate-400" />
                     <span className="font-medium text-slate-700">Assigned:</span>
                     <span className="ml-1">{ticket.assignedToName}</span>
                   </div>
                 )}
               </div>
 
+              {/* EXPANDED CONTENT */}
+              {expandedTicketId === ticket.id && (
+                <div className="mt-6 pt-6 border-t border-slate-100 space-y-6 animate-in slide-in-from-top-2 duration-200 cursor-default" onClick={(e) => e.stopPropagation()}>
+
+                  {/* Description */}
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Description</h4>
+                    <p className="text-slate-700 text-sm leading-relaxed">{ticket.description}</p>
+                  </div>
+
+                  {/* Location Details */}
+                  {ticket.Floor && (
+                    <div className="text-sm text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100 flex items-center">
+                      <MapPin size={16} className="mr-2 text-slate-400" />
+                      <span>Floor {ticket.Floor}, Room {ticket.Room}, Bed {ticket.Bed}</span>
+                    </div>
+                  )}
+
+                  {/* Work Updates / Comments */}
+                  {ticket.comment && (
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Work Updates</h4>
+                      <div className="text-sm text-slate-700 bg-blue-50/50 p-4 rounded-xl border border-blue-100/50 leading-relaxed">
+                        {ticket.comment}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Employee Update Form */}
+                  {user?.role === "employee" && ticket.status === "In Progress" && (
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/60">
+                      <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Update Progress</h4>
+                      <textarea
+                        value={updateComment}
+                        onChange={(e) => setUpdateComment(e.target.value)}
+                        placeholder="Describe your progress..."
+                        className="w-full p-3 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none mb-3"
+                        rows={3}
+                      />
+                      <button
+                        onClick={() => handleAction(ticket.id, "update", { comment: updateComment })}
+                        className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                      >
+                        Submit Update
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Assignment Section */}
+              {expandedTicketId === ticket.id && (
+                (user?.role === "admin" && !ticket.assignedToName && ticket.status !== "Rejected") ||
+                (user?.role === "manager" && ticket.assignedToName === user.name && ticket.status !== "Resolved" && ticket.status !== "Verified" && ticket.status !== "Closed")
+              ) && (
+                  <div className="mt-4 pt-4 border-t border-slate-200/60 space-y-3" onClick={(e) => e.stopPropagation()}>
+                    <h4 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Assignment</h4>
+
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                          {user?.role === "admin" ? "Select Manager" : "Select Employee"}
+                        </label>
+                        <CustomSelect
+                          options={assignableUsers[ticket.id] || []}
+                          value={selectedUserIds[ticket.id] ?? null}
+                          onChange={(val) => setSelectedUserIds(prev => ({ ...prev, [ticket.id]: val }))}
+                          placeholder="Choose..."
+                          label={user?.role === "admin" ? "Assign to Manager" : "Assign to Employee"}
+                        />
+                        {(assignableUsers[ticket.id]?.length ?? 0) === 0 && (
+                          <p className="text-[10px] text-amber-600 font-medium mt-1 flex items-center gap-1">
+                            ⚠️ No {user?.role === "admin" ? "managers" : "employees"} found in Unit {ticket.unitId}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Deadline</label>
+                        <CustomDatePicker
+                          value={deadlines[ticket.id] ?? ""}
+                          onChange={(val) => setDeadlines(prev => ({ ...prev, [ticket.id]: val }))}
+                          label="Select Deadline"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+              {/* Manager Verification Section */}
+              {expandedTicketId === ticket.id && user?.role === "manager" && ticket.status === "Resolved" && (
+                <div className="mt-4 pt-4 border-t border-slate-200/60 space-y-3" onClick={(e) => e.stopPropagation()}>
+                  <h4 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Manager Review</h4>
+                  <textarea
+                    value={updateComment}
+                    onChange={(e) => setUpdateComment(e.target.value)}
+                    placeholder="Add verification notes..."
+                    className="w-full p-3 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none mb-3"
+                    rows={2}
+                  />
+                </div>
+              )}
+
               {/* Actions */}
-              <div className="mt-6 pt-4 border-t border-slate-200/60 relative z-10">
+              <div className="mt-6 pt-4 border-t border-slate-200/60 relative z-10" onClick={(e) => e.stopPropagation()}>
                 <div className="flex space-x-2">
-                  {user?.role === "admin" && ticket.status === "Pending" && (
+                  {user?.role === "admin" && ticket.status === "Pending" && !ticket.assignedToName && (
                     <button
-                      onClick={() => handleAction(ticket.id, "assign", { assignedToId: 2 })} // Example manager ID
+                      onClick={() => {
+                        const ticketUserId = selectedUserIds[ticket.id];
+                        const ticketDeadline = deadlines[ticket.id];
+                        if (!ticketUserId || !ticketDeadline) {
+                          alert("Please select a manager and set a deadline");
+                          return;
+                        }
+                        handleAction(ticket.id, "assign", {
+                          assignedToId: ticketUserId,
+                          deadline: ticketDeadline,
+                          requiredEquipmentIds: [],
+                          equipmentNote: "",
+                          extraCost: 0
+                        });
+                      }}
                       className="flex-1 bg-blue-600/90 hover:bg-blue-600 text-white py-2 px-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center text-sm font-medium"
                     >
                       <ArrowRight size={16} className="mr-2" />
@@ -180,10 +328,24 @@ const MyTickets = () => {
                     </button>
                   )}
 
-                  {user?.role === "manager" && (
+                  {user?.role === "manager" && ticket.assignedToName === user.name && ticket.status !== "Resolved" && ticket.status !== "Closed" && (
                     <button
-                      onClick={() => handleAction(ticket.id, "assign", { assignedToId: 3 })} // Example employee ID
-                      className="flex-1 bg-emerald-600/90 hover:bg-emerald-600 text-white py-2 px-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center text-sm font-medium"
+                      onClick={() => {
+                        const ticketUserId = selectedUserIds[ticket.id];
+                        const ticketDeadline = deadlines[ticket.id];
+                        if (!ticketUserId || !ticketDeadline) {
+                          alert("Please select an employee and set a deadline");
+                          return;
+                        }
+                        handleAction(ticket.id, "assign", {
+                          assignedToId: ticketUserId,
+                          deadline: ticketDeadline,
+                          requiredEquipmentIds: [],
+                          equipmentNote: "",
+                          extraCost: 0
+                        });
+                      }}
+                      className="flex-1 bg-green-600/90 hover:bg-green-600 text-white py-2 px-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center text-sm font-medium"
                     >
                       <ArrowRight size={16} className="mr-2" />
                       Assign Employee
@@ -196,37 +358,42 @@ const MyTickets = () => {
                       className="flex-1 bg-purple-600/90 hover:bg-purple-600 text-white py-2 px-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center text-sm font-medium"
                     >
                       <CheckCircle size={16} className="mr-2" />
-                      Verify & Close
+                      Verify & Approve
                     </button>
                   )}
 
-                  {user?.role === "employee" && (
-                    <button
-                      onClick={() => handleAction(ticket.id, "accept")}
-                      className="flex-1 bg-emerald-600/90 hover:bg-emerald-600 text-white py-2 px-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center text-sm font-medium"
-                    >
-                      <CheckCircle size={16} className="mr-2" />
-                      Accept
-                    </button>
-                  )}
 
-                  {user?.role === "employee" && (
+
+                  {user?.role === "employee" && ticket.status === "In Progress" && (
                     <>
                       <button
-                        onClick={() => openModal(ticket)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleExpand(ticket);
+                        }}
                         className="flex-1 bg-blue-600/90 hover:bg-blue-600 text-white py-2 px-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center text-sm font-medium"
                       >
                         <Edit size={16} className="mr-2" />
                         Update
                       </button>
                       <button
-                        onClick={() => handleAction(ticket.id, "close")}
-                        className="flex-1 bg-red-600/90 hover:bg-red-600 text-white py-2 px-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center text-sm font-medium"
+                        onClick={() => handleAction(ticket.id, "mark-done")}
+                        className="flex-1 bg-emerald-600/90 hover:bg-emerald-600 text-white py-2 px-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center text-sm font-medium"
                       >
                         <CheckCircle size={16} className="mr-2" />
-                        Close
+                        Mark as Done
                       </button>
                     </>
+                  )}
+
+                  {user?.role === "admin" && ticket.status === "Verified" && (
+                    <button
+                      onClick={() => handleAction(ticket.id, "close")}
+                      className="flex-1 bg-slate-600/90 hover:bg-slate-600 text-white py-2 px-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center text-sm font-medium"
+                    >
+                      <X size={16} className="mr-2" />
+                      Close Ticket
+                    </button>
                   )}
                 </div>
               </div>
@@ -248,103 +415,7 @@ const MyTickets = () => {
         }
       </div >
 
-      {/* Modal - Glassmorphic Overlay */}
-      {
-        showModal && selectedTicket && (
-          <div onClick={() => setShowModal(false)} className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-            <div onClick={(e) => e.stopPropagation()} className="bg-white/80 backdrop-blur-xl border border-white/50 shadow-2xl rounded-2xl max-w-sm w-full max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200">
-              <div className="p-6 border-b border-slate-200/60">
-                <h2 className="text-2xl font-bold text-slate-800">{selectedTicket.title}</h2>
-                <div className="flex space-x-2 mt-3">
-                  <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${selectedTicket.priority.toLowerCase() === 'high' ? 'bg-red-500/10 text-red-700 border-red-500/20' :
-                    selectedTicket.priority.toLowerCase() === 'medium' ? 'bg-orange-500/10 text-orange-700 border-orange-500/20' :
-                      selectedTicket.priority.toLowerCase() === 'low' ? 'bg-green-500/10 text-green-700 border-green-500/20' :
-                        'bg-slate-500/10 text-slate-700 border-slate-500/20'
-                    }`}>
-                    {selectedTicket.priority}
-                  </span>
-                  <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${selectedTicket.status === 'Pending' ? 'bg-amber-500/10 text-amber-700 border-amber-500/20' :
-                    selectedTicket.status === 'In Progress' ? 'bg-blue-500/10 text-blue-700 border-blue-500/20' :
-                      selectedTicket.status === 'Resolved' ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20' :
-                        selectedTicket.status === 'Closed' ? 'bg-slate-500/10 text-slate-700 border-slate-500/20' :
-                          'bg-gray-100 text-gray-800'
-                    }`}>
-                    {selectedTicket.status}
-                  </span>
-                </div>
-              </div>
-
-              <div className="p-8 space-y-8">
-                {/* Assignment Section (Moved Up) */}
-                <div>
-                  <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider mb-3">Assignment</h3>
-                  <div className="space-y-3 text-sm">
-                    {selectedTicket.assignedToName ? (
-                      <p className="text-slate-600"><strong className="text-slate-800">Assigned to:</strong> {selectedTicket.assignedToName}</p>
-                    ) : (
-                      <div className="flex items-center text-slate-400 italic bg-slate-50 px-3 py-2 rounded-lg">
-                        <User size={16} className="mr-2" /> Not assigned
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider mb-2">Description</h3>
-                  <p className="text-slate-600 leading-relaxed">{selectedTicket.description}</p>
-                </div>
-
-                <div className="grid grid-cols-1 gap-6">
-                  <div>
-                    <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider mb-3">Details</h3>
-                    <div className="space-y-3 text-sm text-slate-600">
-                      <p><strong className="text-slate-800">Department:</strong> {selectedTicket.department}</p>
-                      <p><strong className="text-slate-800">Category:</strong> {selectedTicket.category}</p>
-                      <p><strong className="text-slate-800">Created:</strong> {new Date(selectedTicket.createdAt).toLocaleString()}</p>
-                      {selectedTicket.Floor && (
-                        <p><strong className="text-slate-800">Location:</strong> Floor {selectedTicket.Floor}, Room {selectedTicket.Room}, Bed {selectedTicket.Bed}</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {user?.role === "employee" && selectedTicket.status === "In Progress" && (
-                  <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100/50">
-                    <h3 className="font-semibold text-blue-900 mb-3 flex items-center">
-                      <Edit size={18} className="mr-2" /> Update Work Progress
-                    </h3>
-                    <textarea
-                      value={updateComment}
-                      onChange={(e) => setUpdateComment(e.target.value)}
-                      placeholder="Describe your progress, equipment used, etc."
-                      className="w-full p-4 border border-blue-200 bg-white/80 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
-                      rows={4}
-                    />
-                    <button
-                      onClick={() => {
-                        handleAction(selectedTicket.id, "update", { comment: updateComment });
-                        setShowModal(false);
-                      }}
-                      className="mt-4 w-full bg-blue-600 text-white py-2.5 px-6 rounded-xl hover:bg-blue-700 transition-all font-medium shadow-lg shadow-blue-200"
-                    >
-                      Submit Progress Update
-                    </button>
-                  </div>
-                )}
-
-                {selectedTicket.comment && (
-                  <div>
-                    <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider mb-3">Work Updates</h3>
-                    <div className="text-slate-700 bg-slate-50/80 p-5 rounded-xl border border-slate-200/60 leading-relaxed shadow-inner">
-                      {selectedTicket.comment}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )
-      }
+      {/* Modal REMOVED */}
     </div >
   );
 };

@@ -5,6 +5,7 @@ import { Building2, User2, FileText } from "lucide-react";
 import { axiosClient } from "../api/axiosClient";
 import CustomDatePicker from "./CustomDatePicker";
 import CustomSelect from "./CustomSelect";
+import { useAuth } from "../hooks/useAuth";
 
 interface ServiceSlipProps {
   ticket: Ticket | null;
@@ -36,6 +37,7 @@ const ServiceSlip: React.FC<ServiceSlipProps> = ({
   onAccept,
   onDecline,
 }) => {
+  const { user } = useAuth();
   if (!ticket) return null;
 
   const [remarks, setRemarks] = useState("");
@@ -274,7 +276,7 @@ const ServiceSlip: React.FC<ServiceSlipProps> = ({
                     options={users}
                     value={assignedToId}
                     onChange={setAssignedToId}
-                    label="Select Employee"
+                    label={user?.role === 'admin' ? 'Assign to Manager' : 'Assign to Employee'}
                     placeholder="Choose..."
                   />
                 </div>
