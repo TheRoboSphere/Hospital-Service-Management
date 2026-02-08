@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { Ticket, } from '../types';
 import { TICKET_CATEGORIES } from '../constants/category';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 import { axiosClient } from '../api/axiosClient';
 import {
 	Plus,
@@ -48,6 +49,7 @@ const TicketManagement: React.FC<TicketManagementProps> = ({
 	// onUpdateTicket,
 	// onSlip,
 }) => {
+	const { user } = useAuth();
 	const [searchTerm, setSearchTerm] = useState('');
 	const [statusFilter, setStatusFilter] = useState<string>('all');
 	const [priorityFilter, setPriorityFilter] = useState<string>('all');
@@ -70,7 +72,7 @@ const TicketManagement: React.FC<TicketManagementProps> = ({
 	// const [selectedUnitId, setSelectedUnitId] = useState<number | null>(null);
 
 	const handleAddTicket = async (ticket: Ticket) => {
-		setTickets((prev) => [...prev, ticket]);
+		setTickets((prev) => [ticket, ...prev]);
 	};
 
 	const handleUpdateTicket = async (updated: Ticket) => {
@@ -316,34 +318,37 @@ const TicketManagement: React.FC<TicketManagementProps> = ({
 						</div>
 
 						<div className="flex items-center gap-4 relative">
-							<div className="relative" ref={unitDropdownRef}>
-								<button
-									onClick={() => setShowUnitDropdown(!showUnitDropdown)}
-									className="inline-flex items-center gap-2 rounded-2xl bg-white border-2 border-slate-200 px-6 py-4 text-slate-700 font-bold shadow-sm hover:bg-slate-50 hover:border-slate-300 transition-all duration-300 hover:scale-105 active:scale-95"
-								>
-									<ArrowLeftRight className="w-5 h-5 text-slate-500" />
-									<span>Switch Unit</span>
-									<ChevronDown className={`w-4 h-4 text-slate-400 ml-1 transition-transform duration-200 ${showUnitDropdown ? 'rotate-180' : ''}`} />
-								</button>
+							{/* Only show Switch Unit for admins */}
+							{user?.role === 'admin' && (
+								<div className="relative" ref={unitDropdownRef}>
+									<button
+										onClick={() => setShowUnitDropdown(!showUnitDropdown)}
+										className="inline-flex items-center gap-2 rounded-2xl bg-white border-2 border-slate-200 px-6 py-4 text-slate-700 font-bold shadow-sm hover:bg-slate-50 hover:border-slate-300 transition-all duration-300 hover:scale-105 active:scale-95"
+									>
+										<ArrowLeftRight className="w-5 h-5 text-slate-500" />
+										<span>Switch Unit</span>
+										<ChevronDown className={`w-4 h-4 text-slate-400 ml-1 transition-transform duration-200 ${showUnitDropdown ? 'rotate-180' : ''}`} />
+									</button>
 
-								{/* Unit Dropdown */}
-								{showUnitDropdown && (
-									<div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2">
-										{units.map((unit) => (
-											<button
-												key={unit.id}
-												onClick={() => handleSwitchUnit(unit.id)}
-												className={`w-full text-left px-4 py-3 transition-colors font-medium text-sm flex items-center justify-between group ${Number(unitId) === unit.id
-													? 'bg-blue-50 text-blue-600'
-													: 'text-slate-600 hover:bg-slate-50 hover:text-blue-600'
-													}`}
-											>
-												{unit.name}
-											</button>
-										))}
-									</div>
-								)}
-							</div>
+									{/* Unit Dropdown */}
+									{showUnitDropdown && (
+										<div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2">
+											{units.map((unit) => (
+												<button
+													key={unit.id}
+													onClick={() => handleSwitchUnit(unit.id)}
+													className={`w-full text-left px-4 py-3 transition-colors font-medium text-sm flex items-center justify-between group ${Number(unitId) === unit.id
+														? 'bg-blue-50 text-blue-600'
+														: 'text-slate-600 hover:bg-slate-50 hover:text-blue-600'
+														}`}
+												>
+													{unit.name}
+												</button>
+											))}
+										</div>
+									)}
+								</div>
+							)}
 
 							<button
 								onClick={() => setShowAddModal(true)}
@@ -691,7 +696,7 @@ const TicketManagement: React.FC<TicketManagementProps> = ({
 						isOpen={showAddModal}
 						onClose={() => setShowAddModal(false)}
 						onSubmit={handleAddTicket}
-						equipments={[]}
+
 					/>
 				)}
 
