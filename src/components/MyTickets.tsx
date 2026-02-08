@@ -10,7 +10,6 @@ import {
   Edit,
   ArrowRight,
   X,
-  Filter
 } from "lucide-react";
 import { Ticket, User } from "../types";
 import { axiosClient } from "../api/axiosClient";
