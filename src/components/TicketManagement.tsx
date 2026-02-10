@@ -194,6 +194,8 @@ const TicketManagement: React.FC<TicketManagementProps> = ({
 				return 'text-yellow-700 bg-yellow-50';
 			case 'Resolved':
 				return 'text-green-700 bg-green-50';
+			case 'Verified':
+				return 'text-emerald-700 bg-emerald-50';
 			case 'Closed':
 				return 'text-gray-700 bg-gray-100';
 			default:
@@ -213,13 +215,7 @@ const TicketManagement: React.FC<TicketManagementProps> = ({
 				setCategoryFilter('all');
 			},
 		},
-		{
-			title: 'Open',
-			value: tickets.filter((t) => t.status === 'Open').length,
-			color: 'sky',
-			icon: <Clock className="w-5 h-5" />,
-			onClick: () => setStatusFilter('Open'),
-		},
+		
 		{
 			title: 'In Progress',
 			value: tickets.filter((t) => t.status === 'In Progress').length,
@@ -233,6 +229,13 @@ const TicketManagement: React.FC<TicketManagementProps> = ({
 			color: 'amber',
 			icon: <Calendar className="w-5 h-5" />,
 			onClick: () => setStatusFilter('Pending'),
+		},
+		{
+			title: 'Verified',
+			value: tickets.filter((t) => t.status === 'Open').length,
+			color: 'sky',
+			icon: <Clock className="w-5 h-5" />,
+			onClick: () => setStatusFilter('Open'),
 		},
 		{
 			title: 'Resolved',
