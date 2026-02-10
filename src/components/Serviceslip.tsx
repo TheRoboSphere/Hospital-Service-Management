@@ -243,7 +243,7 @@ const ServiceSlip: React.FC<ServiceSlipProps> = ({
                   <CustomDatePicker
                     value={actionDate}
                     onChange={setActionDate}
-                    label="Select Date & Time"
+                   // label="Select Date & Time"
                   />
                 </div>
 
