@@ -262,7 +262,7 @@ const ServiceSlip: React.FC<ServiceSlipProps> = ({
           )}
 
           {/* ASSIGNMENT SECTION (Conditional) */}
-          {isAccepted && (
+          {isAccepted && (user.role === "admin" || user.role === "manager") && (
             <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-6 space-y-5 animate-in slide-in-from-top-4 duration-300">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-1.5 h-6 bg-blue-500 rounded-full"></div>
@@ -271,7 +271,7 @@ const ServiceSlip: React.FC<ServiceSlipProps> = ({
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase">Assign To</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase">Assign To *</label>
                   <CustomSelect
                     options={users}
                     value={assignedToId}
@@ -282,7 +282,7 @@ const ServiceSlip: React.FC<ServiceSlipProps> = ({
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase">Deadline</label>
+                  <label className="text-xs font-bold text-slate-500 uppercase">Deadline *</label>
                   <CustomDatePicker
                     value={deadline}
                     onChange={setDeadline}
@@ -290,7 +290,7 @@ const ServiceSlip: React.FC<ServiceSlipProps> = ({
                   />
                 </div>
 
-                <div className="space-y-1.5">
+                {/* <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-500 uppercase">Est. Cost</label>
                   <input
                     type="number"
@@ -299,7 +299,7 @@ const ServiceSlip: React.FC<ServiceSlipProps> = ({
                     value={extraCost}
                     onChange={(e) => setExtraCost(e.target.value === "" ? "" : Number(e.target.value))}
                   />
-                </div>
+                </div> */}
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-500 uppercase">Notes</label>
@@ -328,7 +328,7 @@ const ServiceSlip: React.FC<ServiceSlipProps> = ({
         </div>
 
         {/* FOOTER ACTIONS (Hidden if accepted) */}
-        {!isAccepted && (
+        {!isAccepted && user && (user.role === "admin" || user.role === "manager") && (
           <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex items-center justify-end gap-3">
             <button
               onClick={handleDecline}
