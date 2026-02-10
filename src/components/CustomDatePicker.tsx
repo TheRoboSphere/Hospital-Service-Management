@@ -4,10 +4,10 @@ import { ChevronLeft, ChevronRight, CalendarClock, ChevronDown, Clock } from 'lu
 interface CustomDatePickerProps {
     value: string;
     onChange: (date: string) => void;
-    label?: string;
+    disabled?: boolean;
 }
 
-const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onChange, label = "Select Date" }) => {
+const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onChange, disabled }) => {
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -28,6 +28,10 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onChange, la
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
+
+    const handleToggle = () => {
+        if (!disabled) setIsOpen(!isOpen);
+    }
 
     // Calendar Helpers
     const getDaysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
@@ -112,17 +116,15 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onChange, la
         <div className="relative" ref={containerRef}>
             {/* TRIGGER */}
             <div
-                onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center justify-between w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 hover:border-slate-300 transition-all cursor-pointer group"
+                onClick={handleToggle}
+                className={`flex items-center justify-between w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl transition-all group ${disabled ? 'opacity-60 cursor-not-allowed' : 'hover:bg-slate-100 hover:border-slate-300 cursor-pointer'}`}
             >
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-white rounded-lg text-blue-500 shadow-sm transition-transform group-active:scale-95">
-                        <CalendarClock className="w-5 h-5" />
+                    <div className={`p-1.5 bg-white rounded-lg text-blue-500 shadow-sm transition-transform ${!disabled && 'group-active:scale-95'}`}>
+                        <CalendarClock className="w-4 h-4" />
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-                            {label}
-                        </span>
+
                         <span className="text-sm font-bold text-slate-700 font-mono">
                             {selectedDate.toLocaleString('en-IN', {
                                 day: 'numeric', month: 'short', year: 'numeric',
@@ -131,11 +133,11 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ value, onChange, la
                         </span>
                     </div>
                 </div>
-                <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                {!disabled && <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />}
             </div>
 
             {/* DROPDOWN */}
-            {isOpen && (
+            {isOpen && !disabled && (
                 <div className="absolute bottom-full left-0 mb-2 w-full sm:w-[320px] bg-white rounded-2xl shadow-xl border border-slate-100 z-50 p-4 animate-in fade-in zoom-in-95 duration-200">
 
                     {/* Header */}

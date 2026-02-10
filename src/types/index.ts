@@ -76,6 +76,7 @@ export interface Ticket {
   attachments?: string[];
   createdBy?: string;
   comments?: TicketComment[];
+  deadline?: string;
 }
 
 export interface TicketComment {
