@@ -5,7 +5,6 @@ import { Building2, User2, FileText } from "lucide-react";
 import { axiosClient } from "../api/axiosClient";
 import CustomDatePicker from "./CustomDatePicker";
 import CustomSelect from "./CustomSelect";
-import { useAuth } from "../hooks/useAuth";
 
 interface ServiceSlipProps {
   ticket: Ticket | null;
@@ -19,6 +18,7 @@ const FALLBACK_UNIT = "NGHC – SILIGURI";
 const statusPill = (status: string) => {
   switch (status) {
     case "Resolved":
+    case "Verified":
       return "bg-emerald-100 text-emerald-700";
     case "In Progress":
       return "bg-blue-100 text-blue-700";
@@ -37,7 +37,6 @@ const ServiceSlip: React.FC<ServiceSlipProps> = ({
   onAccept,
   onDecline,
 }) => {
-  const { user } = useAuth();
   if (!ticket) return null;
 
   const [remarks, setRemarks] = useState("");
@@ -243,7 +242,6 @@ const ServiceSlip: React.FC<ServiceSlipProps> = ({
                   <CustomDatePicker
                     value={actionDate}
                     onChange={setActionDate}
-                    label="Select Date & Time"
                   />
                 </div>
 
@@ -276,7 +274,6 @@ const ServiceSlip: React.FC<ServiceSlipProps> = ({
                     options={users}
                     value={assignedToId}
                     onChange={setAssignedToId}
-                    label={user?.role === 'admin' ? 'Assign to Manager' : 'Assign to Employee'}
                     placeholder="Choose..."
                   />
                 </div>
@@ -286,7 +283,6 @@ const ServiceSlip: React.FC<ServiceSlipProps> = ({
                   <CustomDatePicker
                     value={deadline}
                     onChange={setDeadline}
-                    label="Select Deadline"
                   />
                 </div>
 

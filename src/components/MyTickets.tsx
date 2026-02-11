@@ -9,6 +9,7 @@ import {
   Edit,
   ArrowRight,
   X,
+  Calendar,
 } from "lucide-react";
 import { Ticket, User } from "../types";
 import { axiosClient } from "../api/axiosClient";
@@ -31,7 +32,7 @@ const MyTickets = () => {
 
   const [assignableUsers, setAssignableUsers] = useState<Record<string, User[]>>({});
   // Ticket-specific states to prevent cross-ticket contamination
-  const [selectedUserIds, setSelectedUserIds] = useState<Record<string, number | null>>({});
+  const [selectedUserIds, setSelectedUserIds] = useState<Record<string, string | number | null>>({});
   const [deadlines, setDeadlines] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -43,7 +44,15 @@ const MyTickets = () => {
     else if (user.role === "employee") url = "/tickets/employee/assigned";
 
     axiosClient.get(url)
-      .then(res => setTickets(res.data.tickets))
+      .then(res => {
+        // FILTER: Keep only active tickets (Pending, In Progress)
+        // Resolved -> goes to Verify Page
+        // Verified/Closed -> goes to Verify Page (or Archive)
+        const activeTickets = res.data.tickets.filter((t: Ticket) =>
+          t.status === 'Pending' || t.status === 'In Progress'
+        );
+        setTickets(activeTickets);
+      })
       .finally(() => setLoading(false));
   }, [user]);
 
@@ -54,8 +63,6 @@ const MyTickets = () => {
       if (action === "assign") endpoint = `/tickets/${id}/assign`;
       else if (action === "accept") endpoint = `/tickets/${id}/accept`;
       else if (action === "update") endpoint = `/tickets/${id}/update`;
-      else if (action === "close") endpoint = `/tickets/${id}/close`;
-      else if (action === "verify") endpoint = `/tickets/${id}/manager-verify`;
       else if (action === "mark-done") endpoint = `/tickets/${id}/mark-done`;
 
       const method = action === "assign" ? "post" : "patch";
@@ -159,6 +166,22 @@ const MyTickets = () => {
     fetchAllAssignableUsers();
   }, [tickets]);
 
+  // NEW: Initialize local state with existing assignments when tickets load
+  useEffect(() => {
+    if (tickets.length === 0) return;
+
+    const initialUserIds: Record<string, string | number | null> = {};
+    const initialDeadlines: Record<string, string> = {};
+
+    tickets.forEach(t => {
+      if (t.assignedToId) initialUserIds[t.id] = t.assignedToId;
+      if (t.deadline) initialDeadlines[t.id] = t.deadline;
+    });
+
+    setSelectedUserIds(prev => ({ ...prev, ...initialUserIds }));
+    setDeadlines(prev => ({ ...prev, ...initialDeadlines }));
+  }, [tickets]);
+
 
 
   if (loading) return <div className="min-h-screen bg-gray-50 flex items-center justify-center"><div className="text-xl">Loading...</div></div>;
@@ -187,125 +210,7 @@ const MyTickets = () => {
         {/* Tickets Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {tickets.map(ticket => {
-            const isReverseTicket =
-              ticket.status === "Verified" ||
-              ticket.status === "Closed" ||
-              (user?.role === "manager" && ticket.status === "Resolved");
-
-            if (isReverseTicket) {
-              return (
-                <div
-                  key={ticket.id}
-                  className={`group relative border rounded-2xl p-6 shadow-sm overflow-hidden cursor-default transition-all duration-300 ${ticket.status === "Verified" || ticket.status === "Resolved"
-                    ? "bg-emerald-50/50 border-emerald-100 hover:shadow-md"
-                    : "bg-slate-50/50 border-slate-200 hover:shadow-md"
-                    }`}
-                >
-                  {/* HEADER */}
-                  <div className="pb-4 mb-4 border-b border-slate-200/60 relative z-10">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="text-lg font-bold text-slate-800 leading-tight line-clamp-2">
-                        {ticket.title}
-                      </h3>
-                      {/* STATUS BADGE */}
-                      <span className={`px-2 py-0.5 text-[10px] font-semibold rounded-full border ${ticket.status === 'Verified' || ticket.status === 'Resolved' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
-                        'bg-slate-100 text-slate-600 border-slate-200'
-                        }`}>
-                        {ticket.status}
-                      </span>
-                    </div>
-                    <p className="text-slate-600 text-sm line-clamp-3">
-                      {ticket.description}
-                    </p>
-                  </div>
-
-                  {/* DETAILS ROW */}
-                  <div className="space-y-2.5 relative z-10 mb-6">
-                    <div className="flex items-center text-sm text-slate-500">
-                      <Users size={16} className="mr-2.5 text-slate-400" />
-                      <span className="font-medium text-slate-700">Dept:</span>
-                      <span className="ml-1">{ticket.department}</span>
-                    </div>
-
-                    <div className="flex items-center text-sm text-slate-500">
-                      <Layers size={16} className="mr-2.5 text-slate-400" />
-                      <span className="font-medium text-slate-700">Cat:</span>
-                      <span className="ml-1">{ticket.category}</span>
-                    </div>
-
-                    {/* DEADLINE (Replaces Created At) */}
-                    <div className="flex items-center text-sm text-slate-500">
-                      <Clock size={16} className="mr-2.5 text-slate-400" />
-                      <span className="font-medium text-slate-700 mr-1">Deadline:</span>
-                      <span>
-                        {ticket.deadline ? new Date(ticket.deadline).toLocaleDateString() : 'N/A'}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* BODY CONTENT (Replaces Assignment) */}
-                  <div className="space-y-4 pt-4 border-t border-slate-200/60">
-
-                    {/* WORK UPDATES (Replaces Select Manager) */}
-                    <div>
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">
-                        {ticket.status === 'Verified' || ticket.status === 'Closed' ? 'Verification Note' : 'Work Updates'}
-                      </label>
-                      <div className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 min-h-[46px] flex items-center">
-                        {ticket.comment || <span className="text-slate-400 italic">No notes provided</span>}
-                      </div>
-                    </div>
-
-                    {/* EQUIPMENT COST (Replaces Deadline Input) */}
-                    <div>
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">Equipment Cost</label>
-                      <div className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 font-mono">
-                        ₹0.00
-                      </div>
-                    </div>
-
-                  </div>
-
-                  {/* ACTIONS */}
-                  <div className="mt-6 pt-4 border-t border-slate-200/60">
-
-                    {/* Admin Close Button */}
-                    {user?.role === "admin" && ticket.status === "Verified" && (
-                      <button
-                        onClick={() => handleAction(ticket.id, "close")}
-                        className="w-full bg-slate-700 hover:bg-slate-800 text-white py-2.5 px-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center text-sm font-medium"
-                      >
-                        <X size={16} className="mr-2" />
-                        Close Ticket
-                      </button>
-                    )}
-
-                    {/* Manager Verify Actions */}
-                    {user?.role === "manager" && ticket.status === "Resolved" && (
-                      <div className="space-y-3">
-                        <textarea
-                          value={updateComments[ticket.id] || ""}
-                          onChange={(e) => setUpdateComments(prev => ({ ...prev, [ticket.id]: e.target.value }))}
-                          placeholder="Add verification notes..."
-                          className="w-full p-3 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none bg-white"
-                          rows={2}
-                        />
-                        <button
-                          onClick={() => handleAction(ticket.id, "verify", { note: updateComments[ticket.id] })}
-                          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center text-sm font-medium"
-                        >
-                          <CheckCircle size={16} className="mr-2" />
-                          Verify & Approve
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                </div>
-              );
-            }
-
-            // ACTIVE TICKET UI (Existing Design)
+            // ACTIVE TICKET UI (Assignment & Work)
             return (
               <div
                 key={ticket.id}
@@ -392,11 +297,17 @@ const MyTickets = () => {
                       )}
 
                       {/* Work Updates / Comments */}
-                      {ticket.comment && (
+                      {(ticket.comment || ticket.workNote || ticket.managerReviewNote) && (
                         <div>
-                          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Work Updates</h4>
+                          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">
+                            {ticket.status === 'Verified' || ticket.status === 'Closed' ? 'Verification Note' : 'Work Updates'}
+                          </label>
                           <div className="text-sm text-slate-700 bg-blue-50/50 p-4 rounded-xl border border-blue-100/50 leading-relaxed">
-                            {ticket.comment}
+                            {
+                              (ticket.status === 'Verified' || ticket.status === 'Closed')
+                                ? (ticket.managerReviewNote || ticket.comment || "No verification note")
+                                : (ticket.workNote || ticket.comment || "No work updates")
+                            }
                           </div>
                         </div>
                       )}
@@ -432,35 +343,67 @@ const MyTickets = () => {
                     <div className="mt-4 pt-4 border-t border-slate-200/60 space-y-3">
                       <h4 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Assignment</h4>
 
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                            {user?.role === "admin" ? "Select Manager" : "Select Employee"}
-                          </label>
-                          <CustomSelect
-                            options={assignableUsers[ticket.id] || []}
-                            value={selectedUserIds[ticket.id] ?? null} // Use selected or null
-                            onChange={(val) => setSelectedUserIds(prev => ({ ...prev, [ticket.id]: val }))}
-                            placeholder="Choose..."
-                            disabled={!!ticket.assignedToName && user?.role !== "manager"}
-                            forcedDisplayName={user?.role === "manager" ? undefined : ticket.assignedToName}
-                          />
-                          {(assignableUsers[ticket.id]?.length ?? 0) === 0 && !ticket.assignedToName && (
-                            <p className="text-[10px] text-amber-600 font-medium mt-1 flex items-center gap-1">
-                              ⚠️ No {user?.role === "admin" ? "managers" : "employees"} found in Unit {ticket.unitId}
-                            </p>
-                          )}
-                        </div>
+                      {ticket.assignedToName && (user?.role !== "manager" || String(ticket.assignedToId) !== String(user?.id)) ? (
+                        /* READ-ONLY ASSIGNMENT VIEW */
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                              {user?.role === "admin" ? "Assigned Manager" : "Assigned Employee"}
+                            </label>
+                            <div className="bg-slate-50 border border-slate-100/80 rounded-xl p-3 flex items-center shadow-sm">
+                              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm mr-3 text-blue-500">
+                                <Users size={20} />
+                              </div>
+                              <span className="text-slate-700 font-medium text-sm">{ticket.assignedToName}</span>
+                            </div>
+                          </div>
 
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Deadline</label>
-                          <CustomDatePicker
-                            value={deadlines[ticket.id] || ticket.deadline || ""}
-                            onChange={(val) => setDeadlines(prev => ({ ...prev, [ticket.id]: val }))}
-                            disabled={!!ticket.assignedToName && user?.role !== "manager"}
-                          />
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Deadline</label>
+                            <div className="bg-slate-50 border border-slate-100/80 rounded-xl p-3 flex items-center shadow-sm">
+                              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm mr-3 text-blue-500">
+                                <Calendar size={20} />
+                              </div>
+                              <span className="text-slate-700 font-medium text-sm">
+                                {ticket.deadline ? new Date(ticket.deadline).toLocaleString('en-GB', {
+                                  day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
+                                }) : "No deadline set"}
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      ) : (
+                        /* EDITABLE ASSIGNMENT FORM */
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                              {user?.role === "admin" ? "Select Manager" : "Select Employee"}
+                            </label>
+                            <CustomSelect
+                              options={assignableUsers[ticket.id] || []}
+                              value={selectedUserIds[ticket.id] ?? null} // Use selected or null
+                              onChange={(val) => setSelectedUserIds(prev => ({ ...prev, [ticket.id]: val }))}
+                              placeholder="Choose..."
+                              disabled={!!ticket.assignedToName && user?.role !== "manager"}
+                              forcedDisplayName={user?.role === "manager" ? undefined : ticket.assignedToName}
+                            />
+                            {(assignableUsers[ticket.id]?.length ?? 0) === 0 && !ticket.assignedToName && (
+                              <p className="text-[10px] text-amber-600 font-medium mt-1 flex items-center gap-1">
+                                ⚠️ No {user?.role === "admin" ? "managers" : "employees"} found in Unit {ticket.unitId}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Deadline</label>
+                            <CustomDatePicker
+                              value={deadlines[ticket.id] || ticket.deadline || ""}
+                              onChange={(val) => setDeadlines(prev => ({ ...prev, [ticket.id]: val }))}
+                              disabled={!!ticket.assignedToName && user?.role !== "manager"}
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -491,7 +434,7 @@ const MyTickets = () => {
                       </button>
                     )}
 
-                    {user?.role === "manager" && ticket.status !== "Resolved" && ticket.status !== "Closed" && (
+                    {user?.role === "manager" && ticket.status !== "Resolved" && ticket.status !== "Closed" && (!ticket.assignedToName || String(ticket.assignedToId) === String(user?.id)) && (
                       <button
                         onClick={() => {
                           const ticketUserId = selectedUserIds[ticket.id];
@@ -564,8 +507,13 @@ const MyTickets = () => {
               <div className="w-20 h-20 bg-white/50 backdrop-blur-md rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
                 <span className="text-4xl">📋</span>
               </div>
-              <h3 className="text-xl font-bold text-slate-800 mb-2">No tickets found</h3>
-              <p className="text-slate-500">You don't have any assigned tickets at the moment.</p>
+              <h3 className="text-xl font-bold text-slate-800 mb-2">No active tickets</h3>
+              <p className="text-slate-500">You don't have any pending assignments.</p>
+              {(user?.role === 'manager' || user?.role === 'admin') && (
+                <p className="text-slate-400 text-sm mt-4">
+                  Looking for resolved tickets? Check the <a href={`/unit/${user.unitId}/verify-ticket`} className="text-blue-600 hover:underline">Verification Queue</a>.
+                </p>
+              )}
             </div>
           )
         }

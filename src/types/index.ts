@@ -77,6 +77,8 @@ export interface Ticket {
   createdBy?: string;
   comments?: TicketComment[];
   deadline?: string;
+  workNote?: string;
+  managerReviewNote?: string;
 }
 
 export interface TicketComment {
