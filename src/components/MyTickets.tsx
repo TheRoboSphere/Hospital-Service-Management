@@ -380,7 +380,13 @@ const MyTickets = () => {
                               {user?.role === "admin" ? "Select Manager" : "Select Employee"}
                             </label>
                             <CustomSelect
-                              options={assignableUsers[ticket.id] || []}
+                              options={(assignableUsers[ticket.id] || []).filter(u => {
+                                const ticketDept = ticket.department?.trim().toLowerCase();
+                                const userDept = u.department?.trim().toLowerCase();
+                                const match = !ticketDept || !userDept || ticketDept === userDept;
+                                // console.log(`[Filter] Ticket: ${ticket.title} (${ticketDept}) vs User: ${u.name} (${userDept}) => ${match}`);
+                                return match;
+                              })}
                               value={selectedUserIds[ticket.id] ?? null} // Use selected or null
                               onChange={(val) => setSelectedUserIds(prev => ({ ...prev, [ticket.id]: val }))}
                               placeholder="Choose..."
@@ -389,7 +395,7 @@ const MyTickets = () => {
                             />
                             {(assignableUsers[ticket.id]?.length ?? 0) === 0 && !ticket.assignedToName && (
                               <p className="text-[10px] text-amber-600 font-medium mt-1 flex items-center gap-1">
-                                ⚠️ No {user?.role === "admin" ? "managers" : "employees"} found in Unit {ticket.unitId}
+                                ⚠️ No {user?.role === "admin" ? "managers" : "employees"} found in {ticket.department ? `${ticket.department} Dept` : `Unit ${ticket.unitId}`}
                               </p>
                             )}
                           </div>

@@ -131,6 +131,8 @@ const TicketManagement: React.FC<TicketManagementProps> = ({
 					`/tickets/unit/${unitId}`
 				);
 
+				console.log("FETCHED TICKETS:", res.data.tickets); // DEBUG LOG
+
 				const normalized = res.data.tickets.map((t: any) => ({
 					...t,
 					comments: t.comments ?? [],
@@ -577,9 +579,34 @@ const TicketManagement: React.FC<TicketManagementProps> = ({
 										</span>
 
 										{/* Assigned To Department Badge */}
-										<span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 font-medium border border-indigo-100">
-											{ticket.department || 'Unassigned'}
-										</span>
+										{/* Assigned To Badge */}
+										{ticket.status === 'Resolved' ? (
+											<span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-green-50 text-green-700 text-xs font-medium border border-green-100">
+												Verified by {ticket.assignedToName || 'Employee'}
+											</span>
+										) : ticket.status === 'Verified' ? (
+											<span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-purple-50 text-purple-700 text-xs font-medium border border-purple-100">
+												Verified by Manager
+											</span>
+										) : ticket.status === 'Closed' ? (
+											<span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium border border-slate-200">
+												Verified by Admin
+											</span>
+										) : ticket.status === 'Pending' ? (
+											<span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 text-xs font-medium border border-amber-100">
+												Pending
+											</span>
+										) : ticket.assignedToName ? (
+											// Active Forward Flow (Open/In Progress)
+											<span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-medium border border-indigo-100">
+												{ticket.assignedToName}
+											</span>
+										) : (
+											// Fallback for unassigned
+											<span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 text-xs font-medium border border-amber-100">
+												Pending
+											</span>
+										)}
 
 										<span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 ${getStatusColor(ticket.status)} border border-slate-100`}>
 											{ticket.status}
@@ -620,7 +647,7 @@ const TicketManagement: React.FC<TicketManagementProps> = ({
 									<thead>
 										<tr className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider bg-slate-50">
 											<th className="px-6 py-4">Ticket</th>
-											<th className="px-6 py-4 text-center">Category</th>
+											<th className="px-6 py-4 text-center">Department</th>
 											<th className="px-6 py-4 text-center">Priority</th>
 											<th className="px-6 py-4 text-center">Status</th>
 											<th className="px-6 py-4 text-center">Assigned To</th>
@@ -641,7 +668,7 @@ const TicketManagement: React.FC<TicketManagementProps> = ({
 													</div>
 												</td>
 												<td className="px-6 py-4 align-top text-center">
-													<span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold">{ticket.category}</span>
+													<span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold">{ticket.department}</span>
 												</td>
 												<td className="px-6 py-4 align-top text-center">
 													<span className={`px-3 py-1 rounded-full text-xs font-semibold ${['critical', 'high'].includes((ticket.priority || '').toLowerCase())
@@ -659,9 +686,34 @@ const TicketManagement: React.FC<TicketManagementProps> = ({
 													</span>
 												</td>
 												<td className="px-6 py-4 align-top text-center">
-													<span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 text-sm font-medium border border-indigo-100 ring-1 ring-indigo-50/50">
-														{ticket.department || 'Unassigned'}
-													</span>
+													{/* ASSIGNED TO LOGIC */}
+													{ticket.status === 'Resolved' ? (
+														<span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-green-50 text-green-700 text-xs font-medium border border-green-100">
+															Verified by {ticket.assignedToName || 'Employee'}
+														</span>
+													) : ticket.status === 'Verified' ? (
+														<span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-purple-50 text-purple-700 text-xs font-medium border border-purple-100">
+															Verified by Manager
+														</span>
+													) : ticket.status === 'Closed' ? (
+														<span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium border border-slate-200">
+															Verified by Admin
+														</span>
+													) : ticket.status === 'Pending' ? (
+														<span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 text-xs font-medium border border-amber-100">
+															Pending
+														</span>
+													) : ticket.assignedToName ? (
+														// Active Forward Flow (Open/In Progress)
+														<span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 text-sm font-medium border border-indigo-100">
+															{ticket.assignedToName}
+														</span>
+													) : (
+														// Fallback for unassigned Open tickets
+														<span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 text-xs font-medium border border-amber-100">
+															Pending
+														</span>
+													)}
 												</td>
 												<td className="px-6 py-4 align-top text-right" onClick={(e) => e.stopPropagation()}>
 													<div className="flex justify-end gap-3">

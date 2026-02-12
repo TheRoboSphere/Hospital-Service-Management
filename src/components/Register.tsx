@@ -33,21 +33,10 @@ export default function Register() {
   ];
 
   const DEPARTMENTS = [
-    "Emergency",
-    "ICU",
-    "Operation Theatre",
-    "Radiology",
-    "Pathology",
-    "Pharmacy",
-    "Cardiology",
-    "Neurology",
-    "Pediatrics",
-    "Gynecology",
-    "Orthopedics",
-    "Administration",
+    "Information Technology",
     "Maintenance",
-    "Housekeeping",
-    "IT Support",
+    "Biomedical",
+    "Project",
   ];
 
   const ROLES = ["admin", "manager", "employee"];
@@ -137,11 +126,11 @@ export default function Register() {
               <img src="https://i.postimg.cc/Y9XN17Rk/logo-2.png" alt="Park Hospitals" className="h-full w-auto object-contain" />
             </div>
           </div>
-          <p className="text-sm md:text-base text-[#787880] font-semibold">Service Management System</p>
+
         </div>
 
         {/* Register Form - Textured Glassmorphism Card */}
-        <div className="bg-white/60 backdrop-blur-2xl border border-white/60 rounded-2xl md:rounded-3xl shadow-[0_8px_32px_0_rgba(31,38,135,0.2)] hover:shadow-[0_8px_40px_0_rgba(31,38,135,0.3)] transition-all duration-300 p-5 md:p-6 relative overflow-hidden">
+        <div className="bg-white/60 backdrop-blur-2xl border border-white/60 rounded-2xl md:rounded-3xl shadow-[0_8px_32px_0_rgba(31,38,135,0.2)] hover:shadow-[0_8px_40px_0_rgba(31,38,135,0.3)] transition-all duration-300 px-5 pb-5 pt-3 md:px-6 md:pb-6 md:pt-4 relative overflow-hidden">
           {/* Glass texture overlay */}
           <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-white/10 to-transparent opacity-50 pointer-events-none rounded-2xl md:rounded-3xl"></div>
 
@@ -275,19 +264,18 @@ export default function Register() {
 
               {/* Admin Code */}
               {(form.role === "admin" || form.role === "manager") && (
-                <div className="relative animate-fadeIn">
-                  <Lock className="w-5 h-5 text-gray-500 absolute left-3 top-1/2 transform -translate-y-1/2" />
-                  <input
-                    name="adminCode"
-                    placeholder="Admin Code *"
-                    type="password"
-                    value={form.adminCode}
-                    onChange={handleChange}
-                    className="pl-10 pr-4 py-3 border border-gray-300 rounded-xl w-full bg-white/60 transition-all duration-200 focus:bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50"
-                  />
-                  <p className="text-xs text-gray-500 mt-1 ml-1">
-                    Required for admin & manager roles
-                  </p>
+                <div className="animate-fadeIn">
+                  <div className="relative">
+                    <Lock className="w-5 h-5 text-gray-500 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                    <input
+                      name="adminCode"
+                      placeholder="Admin Code * (Required for admin & manager roles)"
+                      type="password"
+                      value={form.adminCode}
+                      onChange={handleChange}
+                      className="pl-10 pr-4 py-3 border border-gray-300 rounded-xl w-full bg-white/60 transition-all duration-200 focus:bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#3B82F6]/50 placeholder:text-xs placeholder:text-gray-400"
+                    />
+                  </div>
                 </div>
               )}
 
