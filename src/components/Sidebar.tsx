@@ -65,10 +65,10 @@ const Sidebar = ({ onLogout, user }: { onLogout: () => void; user: any }) => {
           );
         })}
       </nav>
-        <div className="relative z-10 flex items-center justify-center mb-10 mt-4">
+        <div className="relative z-10 flex items-center justify-center mb-3 mt-4">
         <img
           src={pic}
-          className="h-20 w-auto object-contain"
+          className="h-12 w-auto object-contain"
           alt="ROBOSPHERE"
         />
       </div>
