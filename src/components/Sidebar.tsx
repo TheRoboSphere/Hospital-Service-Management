@@ -7,7 +7,7 @@ import {
   LogOut,
 } from "lucide-react";
 import UserProfileCard from "./UserProfileCard";
-
+import pic from "../assets/Robo-logo.png";
 const Sidebar = ({ onLogout, user }: { onLogout: () => void; user: any }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -67,7 +67,7 @@ const Sidebar = ({ onLogout, user }: { onLogout: () => void; user: any }) => {
       </nav>
         <div className="relative z-10 flex items-center justify-center mb-10 mt-4">
         <img
-          src="Robo-logo.png"
+          src={pic}
           className="h-20 w-auto object-contain"
           alt="ROBOSPHERE"
         />
