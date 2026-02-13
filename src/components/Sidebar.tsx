@@ -65,7 +65,13 @@ const Sidebar = ({ onLogout, user }: { onLogout: () => void; user: any }) => {
           );
         })}
       </nav>
-
+        <div className="relative z-10 flex items-center justify-center mb-10 mt-4">
+        <img
+          src="Robo-logo.png"
+          className="h-20 w-auto object-contain"
+          alt="ROBOSPHERE"
+        />
+      </div>
       {/* User Profile Card */}
       <div className="relative z-10 mt-auto mb-3">
         <UserProfileCard user={user} />
