@@ -123,13 +123,18 @@ const TicketManagement: React.FC<TicketManagementProps> = ({
 	//   fetchTickets();
 	// }, [ unitId]);
 	useEffect(() => {
-		if (!unitId) return;
+		if (!user) return; // Wait for user to be loaded
 
 		const fetchTickets = async () => {
 			try {
-				const res = await axiosClient.get(
-					`/tickets/unit/${unitId}`
-				);
+				let url = `/tickets/unit/${unitId}`; // Default fallback just in case
+
+				// STRICT FILTERING based on user role as requested
+				if (user.role === 'employee') url = '/tickets/employee/assigned';
+				else if (user.role === 'manager') url = '/tickets/manager/assigned';
+				else if (user.role === 'admin') url = '/tickets/admin/assigned';
+
+				const res = await axiosClient.get(url);
 
 				console.log("FETCHED TICKETS:", res.data.tickets); // DEBUG LOG
 
@@ -147,7 +152,7 @@ const TicketManagement: React.FC<TicketManagementProps> = ({
 		};
 
 		fetchTickets();
-	}, [unitId]);
+	}, [unitId, user]); // Re-fetch if unitId changes (though endpoints might ignore it for strict roles) or user loads
 
 
 	const filteredTickets = useMemo(() => {
@@ -198,6 +203,8 @@ const TicketManagement: React.FC<TicketManagementProps> = ({
 				return 'text-green-700 bg-green-50';
 			case 'Closed':
 				return 'text-gray-700 bg-gray-100';
+			case 'Rejected':
+				return 'text-red-700 bg-red-50 border-red-100';
 			default:
 				return 'text-gray-700 bg-gray-50';
 		}
@@ -592,6 +599,10 @@ const TicketManagement: React.FC<TicketManagementProps> = ({
 											<span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium border border-slate-200">
 												Verified by Admin
 											</span>
+										) : ticket.status === 'Rejected' ? (
+											<span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-red-50 text-red-700 text-xs font-medium border border-red-200">
+												Rejected
+											</span>
 										) : ticket.status === 'Pending' ? (
 											<span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 text-xs font-medium border border-amber-100">
 												Pending
@@ -611,6 +622,12 @@ const TicketManagement: React.FC<TicketManagementProps> = ({
 										<span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 ${getStatusColor(ticket.status)} border border-slate-100`}>
 											{ticket.status}
 										</span>
+										{/* Iteration Count Badge */}
+										{(ticket.rejectionCount || 0) > 0 && (
+											<span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 text-xs font-bold border border-amber-100 ml-1">
+												Attempt #{(ticket.rejectionCount || 0) + 1}
+											</span>
+										)}
 									</div>
 
 									<div className="mt-4 flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
@@ -684,6 +701,14 @@ const TicketManagement: React.FC<TicketManagementProps> = ({
 													<span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(ticket.status)}`}>
 														{ticket.status}
 													</span>
+													{/* Iteration Count Badge */}
+													{(ticket.rejectionCount || 0) > 0 && (
+														<div className="mt-1">
+															<span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-[10px] font-bold border border-amber-100">
+																Attempt #{(ticket.rejectionCount || 0) + 1}
+															</span>
+														</div>
+													)}
 												</td>
 												<td className="px-6 py-4 align-top text-center">
 													{/* ASSIGNED TO LOGIC */}

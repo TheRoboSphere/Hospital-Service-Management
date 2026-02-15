@@ -79,6 +79,7 @@ export interface Ticket {
   deadline?: string;
   workNote?: string;
   managerReviewNote?: string;
+  rejectionCount?: number;
 }
 
 export interface TicketComment {

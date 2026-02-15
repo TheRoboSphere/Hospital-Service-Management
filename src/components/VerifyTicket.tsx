@@ -13,6 +13,7 @@ import { useAuth } from "../hooks/useAuth";
 interface ExtendedTicket extends Ticket {
     assignedToName?: string;
     comment?: string;
+    cost?: number; // Add cost to interface
 }
 
 const VerifyTicket = () => {
@@ -59,6 +60,7 @@ const VerifyTicket = () => {
             let endpoint = "";
             if (action === "verify") endpoint = `/tickets/${id}/manager-verify`;
             else if (action === "close") endpoint = `/tickets/${id}/close`;
+            else if (action === "reject") endpoint = `/tickets/${id}/reject`;
 
             await axiosClient.patch(endpoint, data);
 
@@ -119,6 +121,12 @@ const VerifyTicket = () => {
                                     <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full border bg-emerald-100 text-emerald-700 border-emerald-200">
                                         {ticket.status}
                                     </span>
+                                    {/* Iteration Count Badge */}
+                                    {(ticket.rejectionCount || 0) > 0 && (
+                                        <span className="ml-2 px-2 py-0.5 text-[10px] font-semibold rounded-full border bg-amber-100 text-amber-700 border-amber-200" title={`This ticket has been rejected ${ticket.rejectionCount} times`}>
+                                            Attempt #{(ticket.rejectionCount || 0) + 1}
+                                        </span>
+                                    )}
                                 </div>
                                 <p className="text-slate-600 text-sm line-clamp-3">
                                     {ticket.description}
@@ -154,6 +162,15 @@ const VerifyTicket = () => {
                                         <span>{new Date(ticket.deadline).toLocaleDateString()}</span>
                                     </div>
                                 )}
+
+                                {/* Cost Display */}
+                                {ticket.cost && ticket.cost > 0 ? (
+                                    <div className="flex items-center text-sm text-slate-500">
+                                        <span className="w-4 h-4 mr-2.5 flex items-center justify-center font-bold text-slate-400 text-xs border border-slate-300 rounded-full">₹</span>
+                                        <span className="font-medium text-slate-700 mr-1">Costing:</span>
+                                        <span className="font-semibold text-slate-800">₹{ticket.cost}</span>
+                                    </div>
+                                ) : null}
                             </div>
 
                             {/* WORK CONTENT */}
@@ -194,25 +211,50 @@ const VerifyTicket = () => {
                                             className="w-full p-3 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none bg-white"
                                             rows={2}
                                         />
-                                        <button
-                                            onClick={() => handleAction(ticket.id, "verify", { note: verificationNotes[ticket.id] })}
-                                            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center text-sm font-medium"
-                                        >
-                                            <CheckCircle size={16} className="mr-2" />
-                                            Verify & Approve
-                                        </button>
+
+                                        <div className="flex gap-3">
+                                            <button
+                                                onClick={() => {
+                                                    const reason = prompt("Enter reason for rejection:");
+                                                    if (reason) handleAction(ticket.id, "reject", { reason });
+                                                }}
+                                                className="flex-1 bg-red-100 hover:bg-red-200 text-red-700 py-2.5 px-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center text-sm font-medium"
+                                            >
+                                                <X size={16} className="mr-2" />
+                                                Reject
+                                            </button>
+                                            <button
+                                                onClick={() => handleAction(ticket.id, "verify", { note: verificationNotes[ticket.id] })}
+                                                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center text-sm font-medium"
+                                            >
+                                                <CheckCircle size={16} className="mr-2" />
+                                                Verify
+                                            </button>
+                                        </div>
                                     </div>
                                 )}
 
-                                {/* Admin: Close */}
+                                {/* Admin: Close or Reject */}
                                 {user?.role === "admin" && ticket.status === "Verified" && (
-                                    <button
-                                        onClick={() => handleAction(ticket.id, "close")}
-                                        className="w-full bg-slate-700 hover:bg-slate-800 text-white py-2.5 px-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center text-sm font-medium"
-                                    >
-                                        <X size={16} className="mr-2" />
-                                        Close Ticket
-                                    </button>
+                                    <div className="flex gap-3">
+                                        <button
+                                            onClick={() => {
+                                                const reason = prompt("Enter reason for rejection:");
+                                                if (reason) handleAction(ticket.id, "reject", { reason });
+                                            }}
+                                            className="flex-1 bg-red-100 hover:bg-red-200 text-red-700 py-2.5 px-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center text-sm font-medium"
+                                        >
+                                            <X size={16} className="mr-2" />
+                                            Reject
+                                        </button>
+                                        <button
+                                            onClick={() => handleAction(ticket.id, "close")}
+                                            className="flex-1 bg-slate-700 hover:bg-slate-800 text-white py-2.5 px-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center text-sm font-medium"
+                                        >
+                                            <CheckCircle size={16} className="mr-2" />
+                                            Close Ticket
+                                        </button>
+                                    </div>
                                 )}
                             </div>
 

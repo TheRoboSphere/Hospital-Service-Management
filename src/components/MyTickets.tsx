@@ -20,15 +20,22 @@ import CustomDatePicker from "./CustomDatePicker";
 interface ExtendedTicket extends Ticket {
   assignedToName?: string;
   comment?: string;
+  cost?: number;
+  rejectionReason?: string; // Add rejection reason
 }
 
 const MyTickets = () => {
   const { user } = useAuth();
+  // ... (skip lines)
+
+
   const [tickets, setTickets] = useState<ExtendedTicket[]>([]);
   const [loading, setLoading] = useState(true);
 
   // State to handle comments for multiple tickets independently
   const [updateComments, setUpdateComments] = useState<Record<string, string>>({});
+  // State to handle costs for multiple tickets
+  const [ticketCosts, setTicketCosts] = useState<Record<string, string>>({});
 
   const [assignableUsers, setAssignableUsers] = useState<Record<string, User[]>>({});
   // Ticket-specific states to prevent cross-ticket contamination
@@ -49,7 +56,7 @@ const MyTickets = () => {
         // Resolved -> goes to Verify Page
         // Verified/Closed -> goes to Verify Page (or Archive)
         const activeTickets = res.data.tickets.filter((t: Ticket) =>
-          t.status === 'Pending' || t.status === 'In Progress'
+          t.status === 'Pending' || t.status === 'In Progress' || t.status === 'Rejected'
         );
         setTickets(activeTickets);
       })
@@ -67,16 +74,18 @@ const MyTickets = () => {
 
       const method = action === "assign" ? "post" : "patch";
 
-      // Special handling for "mark-done": save comment first if exists
-      if (action === "mark-done" && updateComments[id]) {
-        try {
-          // We fire and forget this update? Or await it?
-          // Ideally await it to ensure comment is saved before status changes.
-          await axiosClient.patch(`/tickets/${id}/update`, { comment: updateComments[id] });
-        } catch (err) {
-          console.error("Failed to save comment before action", err);
-          // Proceed anyway to mark as done/verify, or alert user?
-          // Proceeding is safer for UX flow, data loss is minor compared to blocking.
+      // Special handling for "mark-done": save comment & cost first if exists
+      if (action === "mark-done") {
+        const payload: any = {};
+        if (updateComments[id]) payload.comment = updateComments[id];
+        if (ticketCosts[id]) payload.cost = ticketCosts[id]; // Add cost to update
+
+        if (Object.keys(payload).length > 0) {
+          try {
+            await axiosClient.patch(`/tickets/${id}/update`, payload);
+          } catch (err) {
+            console.error("Failed to save work details before action", err);
+          }
         }
       }
 
@@ -172,14 +181,17 @@ const MyTickets = () => {
 
     const initialUserIds: Record<string, string | number | null> = {};
     const initialDeadlines: Record<string, string> = {};
+    const initialCosts: Record<string, string> = {};
 
     tickets.forEach(t => {
       if (t.assignedToId) initialUserIds[t.id] = t.assignedToId;
       if (t.deadline) initialDeadlines[t.id] = t.deadline;
+      if (t.cost) initialCosts[t.id] = String(t.cost);
     });
 
     setSelectedUserIds(prev => ({ ...prev, ...initialUserIds }));
     setDeadlines(prev => ({ ...prev, ...initialDeadlines }));
+    setTicketCosts(prev => ({ ...prev, ...initialCosts }));
   }, [tickets]);
 
 
@@ -273,10 +285,17 @@ const MyTickets = () => {
                         ticket.status === 'In Progress' ? 'bg-blue-500/10 text-blue-700 border-blue-500/20' :
                           ticket.status === 'Resolved' ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20' :
                             ticket.status === 'Closed' ? 'bg-slate-500/10 text-slate-700 border-slate-500/20' :
-                              'bg-gray-100 text-gray-800'
+                              ticket.status === 'Rejected' ? 'bg-red-500/10 text-red-700 border-red-500/20' :
+                                'bg-gray-100 text-gray-800'
                         }`}>
                         {ticket.status}
                       </span>
+                      {/* Iteration Count Badge */}
+                      {(ticket.rejectionCount || 0) > 0 && (
+                        <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full border bg-amber-100 text-amber-700 border-amber-200">
+                          Attempt #{(ticket.rejectionCount || 0) + 1}
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -285,7 +304,7 @@ const MyTickets = () => {
                 {/* EXPANDED CONTENT - Dynamic Rendering (Always visible if exists) */}
                 <div>
                   {/* Only show container if there is content */}
-                  {(ticket.Floor || ticket.comment || (user?.role === "employee" && ticket.status === "In Progress")) && (
+                  {(ticket.Floor || ticket.comment || (user?.role === "employee" && (ticket.status === "In Progress" || ticket.status === "Rejected"))) && (
                     <div className="mt-6 pt-6 border-t border-slate-100 space-y-6 animate-in slide-in-from-top-2 duration-200 cursor-default">
 
                       {/* Location Details */}
@@ -296,8 +315,76 @@ const MyTickets = () => {
                         </div>
                       )}
 
-                      {/* Work Updates / Comments */}
-                      {(ticket.comment || ticket.workNote || ticket.managerReviewNote) && (
+                      {/* REJECTION ALERT - Show if Rejected */}
+                      {ticket.status === "Rejected" && (
+                        <div className="bg-red-50 border border-red-100 p-4 rounded-xl">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <X className="w-4 h-4 text-red-600" />
+                            <h4 className="text-xs font-bold text-red-700 uppercase tracking-wider">Ticket Rejected</h4>
+                          </div>
+                          <p className="text-sm text-red-800">
+                            {ticket.rejectionReason || "No reason provided."}
+                          </p>
+                          <p className="text-xs text-red-600 mt-2 font-medium">
+                            Please update your work details and re-submit.
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Work Updates / Comments & Input Combined */}
+                      {user?.role === "employee" && (ticket.status === "In Progress" || ticket.status === "Rejected") && (
+                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/60 space-y-4">
+
+                          {/* 1. Progress / Work Note */}
+                          <div>
+                            <div className="flex justify-between items-center mb-2">
+                              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Work Progress</h4>
+                              {/* Small Save Button for intermediate saves */}
+                              <button
+                                onClick={() => handleAction(ticket.id, "update", { comment: updateComments[ticket.id] }, false)}
+                                className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 transition-colors flex items-center gap-1"
+                              >
+                                <Edit size={12} /> Save Note
+                              </button>
+                            </div>
+                            <textarea
+                              value={updateComments[ticket.id] ?? (ticket.workNote || "")}
+                              onChange={(e) => setUpdateComments(prev => ({ ...prev, [ticket.id]: e.target.value }))}
+                              placeholder="Describe your progress..."
+                              className="w-full p-3 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none bg-white"
+                              rows={3}
+                            />
+                          </div>
+
+                          {/* 2. Equipment Cost */}
+                          <div>
+                            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Equipment Cost</h4>
+                            <div className="flex items-center gap-2">
+                              <div className="relative flex-1">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-medium">₹</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  placeholder="0.00"
+                                  value={ticketCosts[ticket.id] ?? (ticket.cost || '')}
+                                  onChange={(e) => setTicketCosts(prev => ({ ...prev, [ticket.id]: e.target.value }))}
+                                  className="w-full pl-7 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                                />
+                              </div>
+                              <button
+                                onClick={() => handleAction(ticket.id, "update", { cost: ticketCosts[ticket.id] }, false)}
+                                className="bg-slate-200 text-slate-700 px-3 py-2 rounded-lg text-xs font-medium hover:bg-slate-300 transition-colors whitespace-nowrap"
+                              >
+                                Update Cost
+                              </button>
+                            </div>
+                          </div>
+
+                        </div>
+                      )}
+
+                      {/* Read-only View for others or if not In Progress/Rejected */}
+                      {!(user?.role === "employee" && (ticket.status === "In Progress" || ticket.status === "Rejected")) && (ticket.comment || ticket.workNote || ticket.managerReviewNote) && (
                         <div>
                           <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">
                             {ticket.status === 'Verified' || ticket.status === 'Closed' ? 'Verification Note' : 'Work Updates'}
@@ -309,26 +396,6 @@ const MyTickets = () => {
                                 : (ticket.workNote || ticket.comment || "No work updates")
                             }
                           </div>
-                        </div>
-                      )}
-
-                      {/* Employee Update Form */}
-                      {user?.role === "employee" && ticket.status === "In Progress" && (
-                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/60">
-                          <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Update Progress</h4>
-                          <textarea
-                            value={updateComments[ticket.id] || ""}
-                            onChange={(e) => setUpdateComments(prev => ({ ...prev, [ticket.id]: e.target.value }))}
-                            placeholder="Describe your progress..."
-                            className="w-full p-3 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none mb-3"
-                            rows={3}
-                          />
-                          <button
-                            onClick={() => handleAction(ticket.id, "update", { comment: updateComments[ticket.id] })}
-                            className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-                          >
-                            Submit Update
-                          </button>
                         </div>
                       )}
                     </div>
@@ -471,21 +538,16 @@ const MyTickets = () => {
                       </button>
                     )}
 
-                    {user?.role === "employee" && ticket.status === "In Progress" && (
+                    {user?.role === "employee" && (ticket.status === "In Progress" || ticket.status === "Rejected") && (
                       <>
-                        <button
-                          onClick={() => handleAction(ticket.id, "update", { comment: updateComments[ticket.id] })}
-                          className="flex-1 bg-blue-600/90 hover:bg-blue-600 text-white py-2 px-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center text-sm font-medium"
-                        >
-                          <Edit size={16} className="mr-2" />
-                          Update
-                        </button>
+                        {/* REMOVED: Separate Update Button */}
+
                         <button
                           onClick={() => handleAction(ticket.id, "mark-done")}
                           className="flex-1 bg-emerald-600/90 hover:bg-emerald-600 text-white py-2 px-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center text-sm font-medium"
                         >
                           <CheckCircle size={16} className="mr-2" />
-                          Mark as Done
+                          {ticket.status === 'Rejected' ? 'Resubmit' : 'Mark as Done'}
                         </button>
                       </>
                     )}
