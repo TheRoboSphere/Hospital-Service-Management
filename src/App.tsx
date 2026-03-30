@@ -23,6 +23,7 @@ import Register from "./components/Register";
 import EquipmentPage from "./components/EquipmentPage";
 
 import MyTickets from "./components/MyTickets";
+import VerifyTicket from "./components/VerifyTicket";
 
 
 /* -------------------------------- Protected Route --------------------------- */
@@ -156,6 +157,8 @@ function App() {
     /> */}
 
           <Route path="settings" element={<Settings />} />
+
+          <Route path="verify-ticket" element={<VerifyTicket />} />
 
         </Route>
 

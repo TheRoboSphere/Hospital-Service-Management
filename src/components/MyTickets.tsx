@@ -9,6 +9,7 @@ import {
   Edit,
   ArrowRight,
   X,
+  Calendar,
 } from "lucide-react";
 import { Ticket, User } from "../types";
 import { axiosClient } from "../api/axiosClient";
@@ -19,19 +20,26 @@ import CustomDatePicker from "./CustomDatePicker";
 interface ExtendedTicket extends Ticket {
   assignedToName?: string;
   comment?: string;
+  cost?: number;
+  rejectionReason?: string; // Add rejection reason
 }
 
 const MyTickets = () => {
   const { user } = useAuth();
+  // ... (skip lines)
+
+
   const [tickets, setTickets] = useState<ExtendedTicket[]>([]);
   const [loading, setLoading] = useState(true);
 
   // State to handle comments for multiple tickets independently
   const [updateComments, setUpdateComments] = useState<Record<string, string>>({});
+  // State to handle costs for multiple tickets
+  const [ticketCosts, setTicketCosts] = useState<Record<string, string>>({});
 
   const [assignableUsers, setAssignableUsers] = useState<Record<string, User[]>>({});
   // Ticket-specific states to prevent cross-ticket contamination
-  const [selectedUserIds, setSelectedUserIds] = useState<Record<string, number | null>>({});
+  const [selectedUserIds, setSelectedUserIds] = useState<Record<string, string | number | null>>({});
   const [deadlines, setDeadlines] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -43,7 +51,15 @@ const MyTickets = () => {
     else if (user.role === "employee") url = "/tickets/employee/assigned";
 
     axiosClient.get(url)
-      .then(res => setTickets(res.data.tickets))
+      .then(res => {
+        // FILTER: Keep only active tickets (Pending, In Progress)
+        // Resolved -> goes to Verify Page
+        // Verified/Closed -> goes to Verify Page (or Archive)
+        const activeTickets = res.data.tickets.filter((t: Ticket) =>
+          t.status === 'Pending' || t.status === 'In Progress' || t.status === 'Rejected'
+        );
+        setTickets(activeTickets);
+      })
       .finally(() => setLoading(false));
   }, [user]);
 
@@ -54,12 +70,22 @@ const MyTickets = () => {
       if (action === "assign") endpoint = `/tickets/${id}/assign`;
       else if (action === "accept") endpoint = `/tickets/${id}/accept`;
       else if (action === "update") endpoint = `/tickets/${id}/update`;
-      else if (action === "close") endpoint = `/tickets/${id}/close`;
-      else if (action === "verify") endpoint = `/tickets/${id}/manager-verify`;
       else if (action === "mark-done") endpoint = `/tickets/${id}/mark-done`;
 
       const method = action === "assign" ? "post" : "patch";
 
+      // Special handling for "mark-done": save comment & cost first if exists
+      if (action === "mark-done") {
+        const payload: any = {};
+        if (updateComments[id]) payload.comment = updateComments[id];
+        if (ticketCosts[id]) payload.cost = ticketCosts[id]; // Add cost to update
+
+        if (Object.keys(payload).length > 0) {
+          try {
+            await axiosClient.patch(`/tickets/${id}/update`, payload);
+          } catch (err) {
+            console.error("Failed to save work details before action", err);
+          }
       // Special handling for "mark-done": save comment first if exists
       if (action === "mark-done" && updateComments[id]) {
         try {
@@ -160,6 +186,25 @@ const MyTickets = () => {
     fetchAllAssignableUsers();
   }, [tickets]);
 
+  // NEW: Initialize local state with existing assignments when tickets load
+  useEffect(() => {
+    if (tickets.length === 0) return;
+
+    const initialUserIds: Record<string, string | number | null> = {};
+    const initialDeadlines: Record<string, string> = {};
+    const initialCosts: Record<string, string> = {};
+
+    tickets.forEach(t => {
+      if (t.assignedToId) initialUserIds[t.id] = t.assignedToId;
+      if (t.deadline) initialDeadlines[t.id] = t.deadline;
+      if (t.cost) initialCosts[t.id] = String(t.cost);
+    });
+
+    setSelectedUserIds(prev => ({ ...prev, ...initialUserIds }));
+    setDeadlines(prev => ({ ...prev, ...initialDeadlines }));
+    setTicketCosts(prev => ({ ...prev, ...initialCosts }));
+  }, [tickets]);
+
 
 
   if (loading) return <div className="min-h-screen bg-gray-50 flex items-center justify-center"><div className="text-xl">Loading...</div></div>;
@@ -188,125 +233,7 @@ const MyTickets = () => {
         {/* Tickets Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {tickets.map(ticket => {
-            const isReverseTicket =
-              ticket.status === "Verified" ||
-              ticket.status === "Closed" ||
-              (user?.role === "manager" && ticket.status === "Resolved");
-
-            if (isReverseTicket) {
-              return (
-                <div
-                  key={ticket.id}
-                  className={`group relative border rounded-2xl p-6 shadow-sm overflow-hidden cursor-default transition-all duration-300 ${ticket.status === "Verified" || ticket.status === "Resolved"
-                    ? "bg-emerald-50/50 border-emerald-100 hover:shadow-md"
-                    : "bg-slate-50/50 border-slate-200 hover:shadow-md"
-                    }`}
-                >
-                  {/* HEADER */}
-                  <div className="pb-4 mb-4 border-b border-slate-200/60 relative z-10">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="text-lg font-bold text-slate-800 leading-tight line-clamp-2">
-                        {ticket.title}
-                      </h3>
-                      {/* STATUS BADGE */}
-                      <span className={`px-2 py-0.5 text-[10px] font-semibold rounded-full border ${ticket.status === 'Verified' || ticket.status === 'Resolved' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
-                        'bg-slate-100 text-slate-600 border-slate-200'
-                        }`}>
-                        {ticket.status}
-                      </span>
-                    </div>
-                    <p className="text-slate-600 text-sm line-clamp-3">
-                      {ticket.description}
-                    </p>
-                  </div>
-
-                  {/* DETAILS ROW */}
-                  <div className="space-y-2.5 relative z-10 mb-6">
-                    <div className="flex items-center text-sm text-slate-500">
-                      <Users size={16} className="mr-2.5 text-slate-400" />
-                      <span className="font-medium text-slate-700">Dept:</span>
-                      <span className="ml-1">{ticket.department}</span>
-                    </div>
-
-                    <div className="flex items-center text-sm text-slate-500">
-                      <Layers size={16} className="mr-2.5 text-slate-400" />
-                      <span className="font-medium text-slate-700">Cat:</span>
-                      <span className="ml-1">{ticket.category}</span>
-                    </div>
-
-                    {/* DEADLINE (Replaces Created At) */}
-                    <div className="flex items-center text-sm text-slate-500">
-                      <Clock size={16} className="mr-2.5 text-slate-400" />
-                      <span className="font-medium text-slate-700 mr-1">Deadline:</span>
-                      <span>
-                        {ticket.deadline ? new Date(ticket.deadline).toLocaleDateString() : 'N/A'}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* BODY CONTENT (Replaces Assignment) */}
-                  <div className="space-y-4 pt-4 border-t border-slate-200/60">
-
-                    {/* WORK UPDATES (Replaces Select Manager) */}
-                    <div>
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">
-                        {ticket.status === 'Verified' || ticket.status === 'Closed' ? 'Verification Note' : 'Work Updates'}
-                      </label>
-                      <div className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 min-h-[46px] flex items-center">
-                        {ticket.comment || <span className="text-slate-400 italic">No notes provided</span>}
-                      </div>
-                    </div>
-
-                    {/* EQUIPMENT COST (Replaces Deadline Input) */}
-                    <div>
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">Equipment Cost</label>
-                      <div className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 font-mono">
-                        ₹0.00
-                      </div>
-                    </div>
-
-                  </div>
-
-                  {/* ACTIONS */}
-                  <div className="mt-6 pt-4 border-t border-slate-200/60">
-
-                    {/* Admin Close Button */}
-                    {user?.role === "admin" && ticket.status === "Verified" && (
-                      <button
-                        onClick={() => handleAction(ticket.id, "close")}
-                        className="w-full bg-slate-700 hover:bg-slate-800 text-white py-2.5 px-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center text-sm font-medium"
-                      >
-                        <X size={16} className="mr-2" />
-                        Close Ticket
-                      </button>
-                    )}
-
-                    {/* Manager Verify Actions */}
-                    {user?.role === "manager" && ticket.status === "Resolved" && (
-                      <div className="space-y-3">
-                        <textarea
-                          value={updateComments[ticket.id] || ""}
-                          onChange={(e) => setUpdateComments(prev => ({ ...prev, [ticket.id]: e.target.value }))}
-                          placeholder="Add verification notes..."
-                          className="w-full p-3 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none bg-white"
-                          rows={2}
-                        />
-                        <button
-                          onClick={() => handleAction(ticket.id, "verify", { note: updateComments[ticket.id] })}
-                          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center text-sm font-medium"
-                        >
-                          <CheckCircle size={16} className="mr-2" />
-                          Verify & Approve
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                </div>
-              );
-            }
-
-            // ACTIVE TICKET UI (Existing Design)
+            // ACTIVE TICKET UI (Assignment & Work)
             return (
               <div
                 key={ticket.id}
@@ -369,10 +296,17 @@ const MyTickets = () => {
                         ticket.status === 'In Progress' ? 'bg-blue-500/10 text-blue-700 border-blue-500/20' :
                           ticket.status === 'Resolved' ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20' :
                             ticket.status === 'Closed' ? 'bg-slate-500/10 text-slate-700 border-slate-500/20' :
-                              'bg-gray-100 text-gray-800'
+                              ticket.status === 'Rejected' ? 'bg-red-500/10 text-red-700 border-red-500/20' :
+                                'bg-gray-100 text-gray-800'
                         }`}>
                         {ticket.status}
                       </span>
+                      {/* Iteration Count Badge */}
+                      {(ticket.rejectionCount || 0) > 0 && (
+                        <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full border bg-amber-100 text-amber-700 border-amber-200">
+                          Attempt #{(ticket.rejectionCount || 0) + 1}
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -381,7 +315,7 @@ const MyTickets = () => {
                 {/* EXPANDED CONTENT - Dynamic Rendering (Always visible if exists) */}
                 <div>
                   {/* Only show container if there is content */}
-                  {(ticket.Floor || ticket.comment || (user?.role === "employee" && ticket.status === "In Progress")) && (
+                  {(ticket.Floor || ticket.comment || (user?.role === "employee" && (ticket.status === "In Progress" || ticket.status === "Rejected"))) && (
                     <div className="mt-6 pt-6 border-t border-slate-100 space-y-6 animate-in slide-in-from-top-2 duration-200 cursor-default">
 
                       {/* Location Details */}
@@ -392,33 +326,87 @@ const MyTickets = () => {
                         </div>
                       )}
 
-                      {/* Work Updates / Comments */}
-                      {ticket.comment && (
-                        <div>
-                          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Work Updates</h4>
-                          <div className="text-sm text-slate-700 bg-blue-50/50 p-4 rounded-xl border border-blue-100/50 leading-relaxed">
-                            {ticket.comment}
+                      {/* REJECTION ALERT - Show if Rejected */}
+                      {ticket.status === "Rejected" && (
+                        <div className="bg-red-50 border border-red-100 p-4 rounded-xl">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <X className="w-4 h-4 text-red-600" />
+                            <h4 className="text-xs font-bold text-red-700 uppercase tracking-wider">Ticket Rejected</h4>
                           </div>
+                          <p className="text-sm text-red-800">
+                            {ticket.rejectionReason || "No reason provided."}
+                          </p>
+                          <p className="text-xs text-red-600 mt-2 font-medium">
+                            Please update your work details and re-submit.
+                          </p>
                         </div>
                       )}
 
-                      {/* Employee Update Form */}
-                      {user?.role === "employee" && ticket.status === "In Progress" && (
-                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/60">
-                          <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Update Progress</h4>
-                          <textarea
-                            value={updateComments[ticket.id] || ""}
-                            onChange={(e) => setUpdateComments(prev => ({ ...prev, [ticket.id]: e.target.value }))}
-                            placeholder="Describe your progress..."
-                            className="w-full p-3 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none mb-3"
-                            rows={3}
-                          />
-                          <button
-                            onClick={() => handleAction(ticket.id, "update", { comment: updateComments[ticket.id] })}
-                            className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-                          >
-                            Submit Update
-                          </button>
+                      {/* Work Updates / Comments & Input Combined */}
+                      {user?.role === "employee" && (ticket.status === "In Progress" || ticket.status === "Rejected") && (
+                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/60 space-y-4">
+
+                          {/* 1. Progress / Work Note */}
+                          <div>
+                            <div className="flex justify-between items-center mb-2">
+                              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Work Progress</h4>
+                              {/* Small Save Button for intermediate saves */}
+                              <button
+                                onClick={() => handleAction(ticket.id, "update", { comment: updateComments[ticket.id] }, false)}
+                                className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 transition-colors flex items-center gap-1"
+                              >
+                                <Edit size={12} /> Save Note
+                              </button>
+                            </div>
+                            <textarea
+                              value={updateComments[ticket.id] ?? (ticket.workNote || "")}
+                              onChange={(e) => setUpdateComments(prev => ({ ...prev, [ticket.id]: e.target.value }))}
+                              placeholder="Describe your progress..."
+                              className="w-full p-3 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none bg-white"
+                              rows={3}
+                            />
+                          </div>
+
+                          {/* 2. Equipment Cost */}
+                          <div>
+                            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Equipment Cost</h4>
+                            <div className="flex items-center gap-2">
+                              <div className="relative flex-1">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-medium">₹</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  placeholder="0.00"
+                                  value={ticketCosts[ticket.id] ?? (ticket.cost || '')}
+                                  onChange={(e) => setTicketCosts(prev => ({ ...prev, [ticket.id]: e.target.value }))}
+                                  className="w-full pl-7 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                                />
+                              </div>
+                              <button
+                                onClick={() => handleAction(ticket.id, "update", { cost: ticketCosts[ticket.id] }, false)}
+                                className="bg-slate-200 text-slate-700 px-3 py-2 rounded-lg text-xs font-medium hover:bg-slate-300 transition-colors whitespace-nowrap"
+                              >
+                                Update Cost
+                              </button>
+                            </div>
+                          </div>
+
+                        </div>
+                      )}
+
+                      {/* Read-only View for others or if not In Progress/Rejected */}
+                      {!(user?.role === "employee" && (ticket.status === "In Progress" || ticket.status === "Rejected")) && (ticket.comment || ticket.workNote || ticket.managerReviewNote) && (
+                        <div>
+                          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">
+                            {ticket.status === 'Verified' || ticket.status === 'Closed' ? 'Verification Note' : 'Work Updates'}
+                          </label>
+                          <div className="text-sm text-slate-700 bg-blue-50/50 p-4 rounded-xl border border-blue-100/50 leading-relaxed">
+                            {
+                              (ticket.status === 'Verified' || ticket.status === 'Closed')
+                                ? (ticket.managerReviewNote || ticket.comment || "No verification note")
+                                : (ticket.workNote || ticket.comment || "No work updates")
+                            }
+                          </div>
                         </div>
                       )}
                     </div>
@@ -433,35 +421,73 @@ const MyTickets = () => {
                     <div className="mt-4 pt-4 border-t border-slate-200/60 space-y-3">
                       <h4 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Assignment</h4>
 
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                            {user?.role === "admin" ? "Select Manager" : "Select Employee"}
-                          </label>
-                          <CustomSelect
-                            options={assignableUsers[ticket.id] || []}
-                            value={selectedUserIds[ticket.id] ?? null} // Use selected or null
-                            onChange={(val) => setSelectedUserIds(prev => ({ ...prev, [ticket.id]: val }))}
-                            placeholder="Choose..."
-                            disabled={!!ticket.assignedToName && user?.role !== "manager"}
-                            forcedDisplayName={user?.role === "manager" ? undefined : ticket.assignedToName}
-                          />
-                          {(assignableUsers[ticket.id]?.length ?? 0) === 0 && !ticket.assignedToName && (
-                            <p className="text-[10px] text-amber-600 font-medium mt-1 flex items-center gap-1">
-                              ⚠️ No {user?.role === "admin" ? "managers" : "employees"} found in Unit {ticket.unitId}
-                            </p>
-                          )}
-                        </div>
+                      {ticket.assignedToName && (user?.role !== "manager" || String(ticket.assignedToId) !== String(user?.id)) ? (
+                        /* READ-ONLY ASSIGNMENT VIEW */
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                              {user?.role === "admin" ? "Assigned Manager" : "Assigned Employee"}
+                            </label>
+                            <div className="bg-slate-50 border border-slate-100/80 rounded-xl p-3 flex items-center shadow-sm">
+                              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm mr-3 text-blue-500">
+                                <Users size={20} />
+                              </div>
+                              <span className="text-slate-700 font-medium text-sm">{ticket.assignedToName}</span>
+                            </div>
+                          </div>
 
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Deadline</label>
-                          <CustomDatePicker
-                            value={deadlines[ticket.id] || ticket.deadline || ""}
-                            onChange={(val) => setDeadlines(prev => ({ ...prev, [ticket.id]: val }))}
-                            disabled={!!ticket.assignedToName && user?.role !== "manager"}
-                          />
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Deadline</label>
+                            <div className="bg-slate-50 border border-slate-100/80 rounded-xl p-3 flex items-center shadow-sm">
+                              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm mr-3 text-blue-500">
+                                <Calendar size={20} />
+                              </div>
+                              <span className="text-slate-700 font-medium text-sm">
+                                {ticket.deadline ? new Date(ticket.deadline).toLocaleString('en-GB', {
+                                  day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
+                                }) : "No deadline set"}
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      ) : (
+                        /* EDITABLE ASSIGNMENT FORM */
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                              {user?.role === "admin" ? "Select Manager" : "Select Employee"}
+                            </label>
+                            <CustomSelect
+                              options={(assignableUsers[ticket.id] || []).filter(u => {
+                                const ticketDept = ticket.department?.trim().toLowerCase();
+                                const userDept = u.department?.trim().toLowerCase();
+                                const match = !ticketDept || !userDept || ticketDept === userDept;
+                                // console.log(`[Filter] Ticket: ${ticket.title} (${ticketDept}) vs User: ${u.name} (${userDept}) => ${match}`);
+                                return match;
+                              })}
+                              value={selectedUserIds[ticket.id] ?? null} // Use selected or null
+                              onChange={(val) => setSelectedUserIds(prev => ({ ...prev, [ticket.id]: val }))}
+                              placeholder="Choose..."
+                              disabled={!!ticket.assignedToName && user?.role !== "manager"}
+                              forcedDisplayName={user?.role === "manager" ? undefined : ticket.assignedToName}
+                            />
+                            {(assignableUsers[ticket.id]?.length ?? 0) === 0 && !ticket.assignedToName && (
+                              <p className="text-[10px] text-amber-600 font-medium mt-1 flex items-center gap-1">
+                                ⚠️ No {user?.role === "admin" ? "managers" : "employees"} found in {ticket.department ? `${ticket.department} Dept` : `Unit ${ticket.unitId}`}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Deadline</label>
+                            <CustomDatePicker
+                              value={deadlines[ticket.id] || ticket.deadline || ""}
+                              onChange={(val) => setDeadlines(prev => ({ ...prev, [ticket.id]: val }))}
+                              disabled={!!ticket.assignedToName && user?.role !== "manager"}
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -492,7 +518,7 @@ const MyTickets = () => {
                       </button>
                     )}
 
-                    {user?.role === "manager" && ticket.status !== "Resolved" && ticket.status !== "Closed" && (
+                    {user?.role === "manager" && ticket.status !== "Resolved" && ticket.status !== "Closed" && (!ticket.assignedToName || String(ticket.assignedToId) === String(user?.id)) && (
                       <button
                         onClick={() => {
                           const ticketUserId = selectedUserIds[ticket.id];
@@ -523,21 +549,16 @@ const MyTickets = () => {
                       </button>
                     )}
 
-                    {user?.role === "employee" && ticket.status === "In Progress" && (
+                    {user?.role === "employee" && (ticket.status === "In Progress" || ticket.status === "Rejected") && (
                       <>
-                        <button
-                          onClick={() => handleAction(ticket.id, "update", { comment: updateComments[ticket.id] })}
-                          className="flex-1 bg-blue-600/90 hover:bg-blue-600 text-white py-2 px-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center text-sm font-medium"
-                        >
-                          <Edit size={16} className="mr-2" />
-                          Update
-                        </button>
+                        {/* REMOVED: Separate Update Button */}
+
                         <button
                           onClick={() => handleAction(ticket.id, "mark-done")}
                           className="flex-1 bg-emerald-600/90 hover:bg-emerald-600 text-white py-2 px-4 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center text-sm font-medium"
                         >
                           <CheckCircle size={16} className="mr-2" />
-                          Mark as Done
+                          {ticket.status === 'Rejected' ? 'Resubmit' : 'Mark as Done'}
                         </button>
                       </>
                     )}
@@ -565,8 +586,13 @@ const MyTickets = () => {
               <div className="w-20 h-20 bg-white/50 backdrop-blur-md rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
                 <span className="text-4xl">📋</span>
               </div>
-              <h3 className="text-xl font-bold text-slate-800 mb-2">No tickets found</h3>
-              <p className="text-slate-500">You don't have any assigned tickets at the moment.</p>
+              <h3 className="text-xl font-bold text-slate-800 mb-2">No active tickets</h3>
+              <p className="text-slate-500">You don't have any pending assignments.</p>
+              {(user?.role === 'manager' || user?.role === 'admin') && (
+                <p className="text-slate-400 text-sm mt-4">
+                  Looking for resolved tickets? Check the <a href={`/unit/${user.unitId}/verify-ticket`} className="text-blue-600 hover:underline">Verification Queue</a>.
+                </p>
+              )}
             </div>
           )
         }

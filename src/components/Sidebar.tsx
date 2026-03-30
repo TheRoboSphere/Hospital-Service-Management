@@ -5,6 +5,7 @@ import {
   Settings,
   Ticket,
   LogOut,
+  CheckCircle,
 } from "lucide-react";
 import UserProfileCard from "./UserProfileCard";
 import pic from "../assets/Robo-logo.png";
@@ -21,6 +22,10 @@ const Sidebar = ({ onLogout, user }: { onLogout: () => void; user: any }) => {
   const menuItems = [
     { key: "tickets", label: "Dashboard", icon: Home },
     { key: "review", label: "Review Ticket", icon: Ticket },
+    // Only show Verify Ticket for Manager or Admin
+    ...((user?.role === "manager" || user?.role === "admin") ? [{
+      key: "verify-ticket", label: "Verify Ticket", icon: CheckCircle
+    }] : []),
     { key: "equipments", label: "Equipment", icon: Package },
     { key: "settings", label: "Settings", icon: Settings },
   ];

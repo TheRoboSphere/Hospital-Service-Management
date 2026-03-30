@@ -3,6 +3,8 @@ import { Ticket, TicketComment } from '../types';
 
 import {
   MessageSquare,
+  CheckCircle,
+  Edit,
 } from 'lucide-react';
 
 interface TicketDetailsModalProps {
@@ -171,6 +173,38 @@ const TicketDetailsModal: React.FC<TicketDetailsModalProps> = ({
               <p className="text-slate-700 leading-relaxed text-sm">{ticket.description}</p>
             </div>
           </div>
+
+
+          {/* SEPARATOR */}
+          <div className="h-px bg-slate-200/60" />
+
+          {/* WORK UPDATES & VERIFICATION NOTES */}
+          {(ticket.workNote || ticket.managerReviewNote) && (
+            <div className="space-y-4">
+              {ticket.managerReviewNote && (
+                <div className="space-y-2">
+                  <span className="flex items-center gap-2 text-xs font-bold text-emerald-600 uppercase tracking-wide">
+                    <CheckCircle className="w-4 h-4" />
+                    Manager Verification
+                  </span>
+                  <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 text-sm text-emerald-900 leading-relaxed">
+                    {ticket.managerReviewNote}
+                  </div>
+                </div>
+              )}
+              {ticket.workNote && (
+                <div className="space-y-2">
+                  <span className="flex items-center gap-2 text-xs font-bold text-blue-600 uppercase tracking-wide">
+                    <Edit className="w-4 h-4" />
+                    Work Update
+                  </span>
+                  <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-900 leading-relaxed">
+                    {ticket.workNote}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* SEPARATOR */}
           <div className="h-px bg-slate-200/60" />

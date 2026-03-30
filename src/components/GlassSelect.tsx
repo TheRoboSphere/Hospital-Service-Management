@@ -48,7 +48,12 @@ export default function GlassSelect({
     };
 
     return (
-        <div className="relative" ref={containerRef}>
+        <div className="relative w-full min-w-0" ref={containerRef}>
+            {icon && (
+                <div className="absolute left-3 top-1/2 transform -translate-y-1/2 z-10 pointer-events-none">
+                    {icon}
+                </div>
+            )}
             {/* Trigger Button */}
             <button
                 type="button"
