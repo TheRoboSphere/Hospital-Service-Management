@@ -12,14 +12,13 @@ import {
 	AlertTriangle,
 	CheckCircle,
 	Tag,
-	FileText,
 	ChevronDown,
 	ArrowLeftRight,
 } from 'lucide-react';
 
 import AddTicketModal from './AddTicketModal';
 import TicketDetailsModal from './TicketDetailsModal';
-import ServiceSlip from './Serviceslip';
+
 
 
 interface TicketManagementProps {
@@ -67,7 +66,7 @@ const TicketManagement: React.FC<TicketManagementProps> = ({
 	const [tickets, setTickets] = useState<Ticket[]>([]);
 
 	//const [reviewTicket, setReviewTicket] = useState<Ticket | null>(null);
-	const [showSlip, setShowSlip] = useState(false);
+
 	const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
 	// const [selectedUnitId, setSelectedUnitId] = useState<number | null>(null);
 
@@ -86,10 +85,7 @@ const TicketManagement: React.FC<TicketManagementProps> = ({
 	const { unitId } = useParams();
 
 
-	const handleSlip = (ticket: Ticket) => {
-		setSelectedTicket(ticket);
-		setShowSlip(true);
-	};
+
 
 
 	// useEffect(() => {
@@ -635,19 +631,6 @@ const TicketManagement: React.FC<TicketManagementProps> = ({
 											<Clock className="w-3.5 h-3.5" />
 											<span>{formatDate(ticket.createdAt)}</span>
 										</div>
-										<div className="flex flex-wrap items-center gap-2 ml-auto">
-											<button
-												onClick={(e) => {
-													e.stopPropagation();
-													handleSlip(ticket);
-												}}
-												className="inline-flex items-center justify-center rounded-full border border-slate-200 p-2 text-slate-500 hover:text-blue-600 hover:border-blue-300 bg-white"
-												title="Service call slip"
-											>
-												<FileText className="h-4 w-4" />
-												<span className="sr-only">Service call slip</span>
-											</button>
-										</div>
 									</div>
 								</div>
 							))}
@@ -668,7 +651,6 @@ const TicketManagement: React.FC<TicketManagementProps> = ({
 											<th className="px-6 py-4 text-center">Priority</th>
 											<th className="px-6 py-4 text-center">Status</th>
 											<th className="px-6 py-4 text-center">Assigned To</th>
-											<th className="px-6 py-4 text-right">Actions</th>
 										</tr>
 									</thead>
 									<tbody className="divide-y divide-slate-100">
@@ -740,23 +722,12 @@ const TicketManagement: React.FC<TicketManagementProps> = ({
 														</span>
 													)}
 												</td>
-												<td className="px-6 py-4 align-top text-right" onClick={(e) => e.stopPropagation()}>
-													<div className="flex justify-end gap-3">
-														<button
-															onClick={() => handleSlip(ticket)}
-															className="inline-flex items-center justify-center rounded-full border border-slate-200 p-2 text-slate-500 hover:text-blue-600 hover:border-blue-300"
-															title="Service call slip"
-														>
-															<FileText className="w-4 h-4" />
-															<span className="sr-only">Service call slip</span>
-														</button>
-													</div>
-												</td>
+
 											</tr>
 										))}
 										{filteredTickets.length === 0 && (
 											<tr>
-												<td colSpan={7} className="px-6 py-16 text-center text-slate-500">
+												<td colSpan={6} className="px-6 py-16 text-center text-slate-500">
 													No tickets match the current filters.
 												</td>
 											</tr>
@@ -785,14 +756,7 @@ const TicketManagement: React.FC<TicketManagementProps> = ({
 						onUpdate={handleUpdateTicket}
 					/>
 				)}
-				{showSlip && selectedTicket && (
-					<ServiceSlip
-						ticket={selectedTicket}
-						onClose={() => setShowSlip(false)}
-						onAccept={handleUpdateTicket}
-						onDecline={handleUpdateTicket}
-					/>
-				)}
+
 			</div>
 		</div>
 	);
