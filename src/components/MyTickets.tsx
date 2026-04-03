@@ -78,7 +78,7 @@ const MyTickets = () => {
       if (action === "mark-done") {
         const payload: any = {};
         if (updateComments[id]) payload.comment = updateComments[id];
-        if (ticketCosts[id]) payload.cost = ticketCosts[id]; // Add cost to update
+        if (ticketCosts[id]) payload.cost = ticketCosts[id];
 
         if (Object.keys(payload).length > 0) {
           try {
@@ -86,16 +86,6 @@ const MyTickets = () => {
           } catch (err) {
             console.error("Failed to save work details before action", err);
           }
-      // Special handling for "mark-done": save comment first if exists
-      if (action === "mark-done" && updateComments[id]) {
-        try {
-          // We fire and forget this update? Or await it?
-          // Ideally await it to ensure comment is saved before status changes.
-          await axiosClient.patch(`/tickets/${id}/update`, { comment: updateComments[id] });
-        } catch (err) {
-          console.error("Failed to save comment before action", err);
-         // Proceed anyway to mark as done/verify, or alert user?
-         // Proceeding is safer for UX flow, data loss is minor compared to blocking.
         }
       }
 

@@ -237,10 +237,10 @@ const TicketManagement: React.FC<TicketManagementProps> = ({
 		},
 		{
 			title: 'Verified',
-			value: tickets.filter((t) => t.status === 'Open').length,
+			value: tickets.filter((t) => t.status === 'Verified').length,
 			color: 'sky',
 			icon: <Clock className="w-5 h-5" />,
-			onClick: () => setStatusFilter('Open'),
+			onClick: () => setStatusFilter('Verified'),
 		},
 		{
 			title: 'Resolved',
