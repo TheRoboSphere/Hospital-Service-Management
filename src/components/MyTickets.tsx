@@ -79,7 +79,7 @@ const MyTickets = () => {
       if (action === "mark-done") {
         const payload: any = {};
         if (updateComments[id]) payload.comment = updateComments[id];
-        if (ticketCosts[id]) payload.cost = ticketCosts[id]; // Add cost to update
+        if (ticketCosts[id]) payload.cost = ticketCosts[id];
 
         if (Object.keys(payload).length > 0) {
           try {
